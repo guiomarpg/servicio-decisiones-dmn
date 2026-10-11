@@ -283,10 +283,9 @@
           ]
         }
       },
+      "http": 500,
       "esperado": {
-        "viable": false,
-        "coste": null,
-        "motivo": "Datos incompletos o no válidos"
+        "mensaje": "'Pedido' is of type"
       }
     },
     {
@@ -347,9 +346,9 @@
           ]
         }
       },
+      "http": 500,
       "esperado": {
-        "viable": false,
-        "motivo": "Datos incompletos o no válidos"
+        "mensaje": "'Pedido' is of type"
       }
     }
   ]

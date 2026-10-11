@@ -62,7 +62,9 @@ def mensajes_error(texto):
         d = json.loads(texto)
     except Exception:
         return [texto[:300]] if texto else []
-    return [m.get('message', '') for m in d.get('messages', []) if m.get('severity') == 'ERROR'] if isinstance(d, dict) else []
+    if not isinstance(d, dict): return []
+    ms = d.get('messages', [])   # primero los errores, después los avisos
+    return [m.get('message', '') for m in ms if m.get('severity') == 'ERROR'] + [m.get('message', '') for m in ms if m.get('severity') != 'ERROR']
 
 
 def ruta_servicio(base, bateria):
@@ -83,8 +85,14 @@ def ejecutar_bateria(base, bateria):
         comprobaciones = []
         if codigo != http_esperado:
             comprobaciones.append({'campo': 'código HTTP', 'esperado': http_esperado, 'obtenido': codigo, 'ok': False})
+        msgs = mensajes_error(texto) if codigo != 200 else []
+        if 'mensaje' in (esc.get('esperado') or {}):
+            buscado = esc['esperado']['mensaje']
+            hallado = next((m for m in msgs if buscado.lower() in m.lower()), None)
+            comprobaciones.append({'campo': 'mensaje de error', 'esperado': buscado, 'obtenido': hallado or (msgs[0] if msgs else '(sin mensaje)'), 'ok': hallado is not None})
         if codigo == 200:
             for campo, esperado in (esc.get('esperado') or {}).items():
+                if campo == 'mensaje': continue
                 obtenido, existe = obtener(resp, campo)
                 comprobaciones.append({'campo': campo, 'esperado': esperado, 'obtenido': obtenido if existe else '(no aparece)',
                                        'ok': existe and iguales(esperado, obtenido)})
@@ -96,7 +104,7 @@ def ejecutar_bateria(base, bateria):
             estado = 'OK' if all(c['ok'] for c in comprobaciones) else 'FALLO'
         filas.append({'id': esc.get('id', ''), 'tipo': esc.get('tipo', ''), 'descripcion': esc.get('descripcion', ''),
                       'estado': estado, 'http': codigo, 'comprobaciones': comprobaciones, 'entrada': esc.get('entrada', {}),
-                      'respuesta': resp, 'mensajes': mensajes_error(texto) if codigo != 200 else []})
+                      'respuesta': resp, 'mensajes': msgs})
     return {'titulo': bateria.get('titulo', bateria.get('fichero', '')), 'fichero': bateria.get('fichero', ''), 'url': url,
             'descripcion': bateria.get('descripcion', ''), 'escenarios': filas}
 

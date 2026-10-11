@@ -73,12 +73,17 @@ async function ejecutar(i) {
       const r = await fetch(url(b), {method: 'POST', headers: {'Content-Type': 'application/json', 'Accept': 'application/json'}, body: JSON.stringify(e.entrada || {})});
       codigo = r.status; const t = await r.text();
       try { resp = JSON.parse(t); } catch (_) { resp = t; }
-      if (codigo !== 200 && resp && resp.messages) mensajes = resp.messages.filter(m => m.severity === 'ERROR').map(m => m.message);
+      if (codigo !== 200 && resp && resp.messages) mensajes = resp.messages.filter(m => m.severity === 'ERROR').concat(resp.messages.filter(m => m.severity !== 'ERROR')).map(m => m.message);
       else if (codigo !== 200) mensajes = [String(t).slice(0, 300)];
     } catch (err) { mensajes = ['No se puede llamar al servicio: ' + err]; }
     const chk = [];
     if (codigo !== httpEsp) chk.push({campo: 'código HTTP', esperado: httpEsp, obtenido: codigo, ok: false});
+    if (e.esperado && 'mensaje' in e.esperado) {
+      const hallado = mensajes.find(m => m.toLowerCase().includes(String(e.esperado.mensaje).toLowerCase()));
+      chk.push({campo: 'mensaje de error', esperado: e.esperado.mensaje, obtenido: hallado || mensajes[0] || '(sin mensaje)', ok: !!hallado});
+    }
     if (codigo === 200) for (const [campo, esp] of Object.entries(e.esperado || {})) {
+      if (campo === 'mensaje') continue;
       const [obt, existe] = obtener(resp, campo);
       chk.push({campo, esperado: esp, obtenido: existe ? obt : undefined, ok: existe && iguales(esp, obt)});
     }

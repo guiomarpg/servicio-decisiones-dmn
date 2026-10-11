@@ -113,7 +113,7 @@ Para crear vuestra batería, copiad `escenarios/FRIOCAMPO_planificar_entrega.jso
 
 - Si el modelo no tiene servicios de decisión, quitad la línea `"servicio"`: se llamará al modelo completo.
 - En `esperado` solo hace falta poner los campos que queréis comprobar. Para entrar en un campo de un resultado estructurado se usa el punto: `"Planificación de la entrega.coste"`. Si el servicio devuelve un valor simple (un número, un texto), la clave es `"resultado"`.
-- Si esperáis que el servicio responda con un error, añadid `"http": 500` (o el código que corresponda).
+- Si esperáis que el servicio responda con un error, añadid `"http": 500` (o el código que corresponda) y, en `esperado`, un trozo del mensaje: `"mensaje": "is not allowed by the declared type"`.
 - Pulsad **Recargar baterías** después de guardar el fichero; no hace falta reiniciar el servicio.
 
 Las mismas baterías se pueden lanzar desde el terminal con `python3 pruebas/probar.py`, que genera un informe en la carpeta `informe`.
@@ -128,7 +128,7 @@ Para guardar los modelos en vuestro repositorio de GitHub: icono de **Source Con
 
 ## Preguntas frecuentes
 
-**La respuesta da código 500.** El servicio ha recibido la petición, pero alguna decisión ha fallado. Repetid la llamada con la operación `/dmnresult`: el campo `messages` dice qué decisión falló y por qué, y `decisionResults` muestra el estado de cada una (`SUCCEEDED`, `FAILED` o `SKIPPED`).
+**La respuesta da código 500.** El servicio ha recibido la petición, pero no ha podido decidir: o algún dato no cumple el contrato (un valor que no está entre los permitidos, un texto donde va un número), o alguna decisión ha fallado. El entorno trabaja en **modo estricto**: comprueba los tipos de los datos de entrada y rechaza los que no encajan, en lugar de seguir con un null. Repetid la llamada con la operación `/dmnresult`: el campo `messages` dice qué decisión falló y por qué, y `decisionResults` muestra el estado de cada una (`SUCCEEDED`, `FAILED` o `SKIPPED`).
 
 **La respuesta da código 400.** El JSON está mal formado (falta una llave, una coma o unas comillas). Revisadlo o pegad de nuevo un ejemplo de `peticiones`.
 
