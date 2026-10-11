@@ -1,4 +1,4 @@
-id;Edad;En fichero de morosidad;Antigüedad laboral en meses;Años como cliente;Nómina domiciliada;Impagos previos;Puntuación del modelo;Ratio de endeudamiento;Ingresos anuales
+id;Solicitante.edad;Solicitante.en fichero de morosidad;Solicitante.antigüedad laboral en meses;Solicitante.años como cliente;Solicitante.nómina domiciliada;Solicitante.impagos previos;Perfil financiero.puntuación del modelo;Perfil financiero.ratio de endeudamiento;Perfil financiero.ingresos anuales
 S0001;26;False;7;1;False;False;698;35.9;49800
 S0002;26;False;19;5;True;False;551;39.3;36900
 S0003;40;False;114;30;True;True;937;25.4;18500

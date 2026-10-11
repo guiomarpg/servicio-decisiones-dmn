@@ -1,0 +1,15 @@
+{
+  "Solicitante": {
+    "edad": 35,
+    "en fichero de morosidad": true,
+    "antigüedad laboral en meses": 4,
+    "años como cliente": 7,
+    "nómina domiciliada": true,
+    "impagos previos": false
+  },
+  "Perfil financiero": {
+    "puntuación del modelo": 760,
+    "ratio de endeudamiento": 28,
+    "ingresos anuales": 24000
+  }
+}

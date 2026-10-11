@@ -1,0 +1,52 @@
+{
+  "titulo": "BANCOSUR · Simulador de límite",
+  "modelo": "T4_BANCOSUR_Tarjeta",
+  "servicio": "Simulador de límite",
+  "descripcion": "Límite orientativo para la web pública. Solo recibe el perfil financiero.",
+  "escenarios": [
+    {
+      "id": "L01",
+      "tipo": "Aceptación",
+      "descripcion": "Riesgo bajo, 24 000 €: el menor de 7 200 € y 6 000 €",
+      "entrada": {
+        "Perfil financiero": {
+          "puntuación del modelo": 760,
+          "ratio de endeudamiento": 28,
+          "ingresos anuales": 24000
+        }
+      },
+      "esperado": {
+        "resultado": 6000
+      }
+    },
+    {
+      "id": "L02",
+      "tipo": "Una por regla",
+      "descripcion": "Riesgo medio, 8 000 €: el tope por ingresos (2 400 €) es el menor",
+      "entrada": {
+        "Perfil financiero": {
+          "puntuación del modelo": 650,
+          "ratio de endeudamiento": 30,
+          "ingresos anuales": 8000
+        }
+      },
+      "esperado": {
+        "resultado": 2400
+      }
+    },
+    {
+      "id": "L03",
+      "tipo": "Datos ausentes",
+      "descripcion": "Sin ingresos: sin límite",
+      "entrada": {
+        "Perfil financiero": {
+          "puntuación del modelo": 760,
+          "ratio de endeudamiento": 28
+        }
+      },
+      "esperado": {
+        "resultado": 0
+      }
+    }
+  ]
+}

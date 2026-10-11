@@ -1,0 +1,365 @@
+{
+  "titulo": "BANCOSUR · Evaluación de la solicitud",
+  "modelo": "T4_BANCOSUR_Tarjeta",
+  "servicio": "Evaluación de la solicitud",
+  "descripcion": "Política de riesgos 1.0.0. Resultados esperados acordados con el área de riesgos.",
+  "escenarios": [
+    {
+      "id": "B01",
+      "tipo": "Aceptación",
+      "descripcion": "Cliente tipo: puntuación 760, endeudamiento 28 %, nómina, 7 años como cliente, 24 000 €",
+      "entrada": {
+        "Solicitante": {
+          "edad": 35,
+          "en fichero de morosidad": false,
+          "antigüedad laboral en meses": 48,
+          "años como cliente": 7,
+          "nómina domiciliada": true,
+          "impagos previos": false
+        },
+        "Perfil financiero": {
+          "puntuación del modelo": 760,
+          "ratio de endeudamiento": 28,
+          "ingresos anuales": 24000
+        }
+      },
+      "esperado": {
+        "decisión": "Aprobar",
+        "límite concedido": 6000,
+        "motivos de denegación": [],
+        "versión de la política": "Política de riesgos 1.0.0"
+      }
+    },
+    {
+      "id": "B02",
+      "tipo": "Una por regla",
+      "descripcion": "Inscrito en un fichero de morosidad",
+      "entrada": {
+        "Solicitante": {
+          "edad": 35,
+          "en fichero de morosidad": true,
+          "antigüedad laboral en meses": 48,
+          "años como cliente": 7,
+          "nómina domiciliada": true,
+          "impagos previos": false
+        },
+        "Perfil financiero": {
+          "puntuación del modelo": 760,
+          "ratio de endeudamiento": 28,
+          "ingresos anuales": 24000
+        }
+      },
+      "esperado": {
+        "decisión": "Denegar",
+        "límite concedido": 0,
+        "motivos de denegación": [
+          "Inscrito en un fichero de morosidad"
+        ]
+      }
+    },
+    {
+      "id": "B03",
+      "tipo": "Una por regla",
+      "descripcion": "Moroso y con 4 meses de antigüedad laboral: dos motivos",
+      "entrada": {
+        "Solicitante": {
+          "edad": 35,
+          "en fichero de morosidad": true,
+          "antigüedad laboral en meses": 4,
+          "años como cliente": 7,
+          "nómina domiciliada": true,
+          "impagos previos": false
+        },
+        "Perfil financiero": {
+          "puntuación del modelo": 760,
+          "ratio de endeudamiento": 28,
+          "ingresos anuales": 24000
+        }
+      },
+      "esperado": {
+        "decisión": "Denegar",
+        "límite concedido": 0,
+        "motivos de denegación": [
+          "Inscrito en un fichero de morosidad",
+          "Antigüedad laboral inferior a seis meses"
+        ]
+      }
+    },
+    {
+      "id": "B04",
+      "tipo": "Una por regla",
+      "descripcion": "Puntuación del modelo 450: riesgo alto",
+      "entrada": {
+        "Solicitante": {
+          "edad": 35,
+          "en fichero de morosidad": false,
+          "antigüedad laboral en meses": 48,
+          "años como cliente": 7,
+          "nómina domiciliada": true,
+          "impagos previos": false
+        },
+        "Perfil financiero": {
+          "puntuación del modelo": 450,
+          "ratio de endeudamiento": 28,
+          "ingresos anuales": 24000
+        }
+      },
+      "esperado": {
+        "decisión": "Revisar",
+        "límite concedido": 0,
+        "motivos de denegación": []
+      }
+    },
+    {
+      "id": "B05",
+      "tipo": "Una por regla",
+      "descripcion": "Riesgo medio y puntuación interna baja (sin nómina, 1 año como cliente)",
+      "entrada": {
+        "Solicitante": {
+          "edad": 35,
+          "en fichero de morosidad": false,
+          "antigüedad laboral en meses": 48,
+          "años como cliente": 1,
+          "nómina domiciliada": false,
+          "impagos previos": false
+        },
+        "Perfil financiero": {
+          "puntuación del modelo": 650,
+          "ratio de endeudamiento": 30,
+          "ingresos anuales": 24000
+        }
+      },
+      "esperado": {
+        "decisión": "Revisar",
+        "límite concedido": 0,
+        "motivos de denegación": []
+      }
+    },
+    {
+      "id": "B06",
+      "tipo": "Frontera",
+      "descripcion": "Puntuación 700 y endeudamiento 34,9 %: riesgo bajo, tope 6 000 €",
+      "entrada": {
+        "Solicitante": {
+          "edad": 35,
+          "en fichero de morosidad": false,
+          "antigüedad laboral en meses": 48,
+          "años como cliente": 6,
+          "nómina domiciliada": true,
+          "impagos previos": false
+        },
+        "Perfil financiero": {
+          "puntuación del modelo": 700,
+          "ratio de endeudamiento": 34.9,
+          "ingresos anuales": 36000
+        }
+      },
+      "esperado": {
+        "decisión": "Aprobar",
+        "límite concedido": 6000
+      }
+    },
+    {
+      "id": "B07",
+      "tipo": "Frontera",
+      "descripcion": "Puntuación 700 y endeudamiento 35 %: riesgo medio, tope 3 000 €",
+      "entrada": {
+        "Solicitante": {
+          "edad": 35,
+          "en fichero de morosidad": false,
+          "antigüedad laboral en meses": 48,
+          "años como cliente": 6,
+          "nómina domiciliada": true,
+          "impagos previos": false
+        },
+        "Perfil financiero": {
+          "puntuación del modelo": 700,
+          "ratio de endeudamiento": 35,
+          "ingresos anuales": 36000
+        }
+      },
+      "esperado": {
+        "decisión": "Aprobar",
+        "límite concedido": 3000
+      }
+    },
+    {
+      "id": "B08",
+      "tipo": "Frontera",
+      "descripcion": "Endeudamiento 50 %: todavía sin motivo de denegación",
+      "entrada": {
+        "Solicitante": {
+          "edad": 35,
+          "en fichero de morosidad": false,
+          "antigüedad laboral en meses": 48,
+          "años como cliente": 7,
+          "nómina domiciliada": true,
+          "impagos previos": false
+        },
+        "Perfil financiero": {
+          "puntuación del modelo": 760,
+          "ratio de endeudamiento": 50,
+          "ingresos anuales": 36000
+        }
+      },
+      "esperado": {
+        "decisión": "Aprobar",
+        "límite concedido": 3000,
+        "motivos de denegación": []
+      }
+    },
+    {
+      "id": "B09",
+      "tipo": "Frontera",
+      "descripcion": "Endeudamiento 50,1 %: se deniega",
+      "entrada": {
+        "Solicitante": {
+          "edad": 35,
+          "en fichero de morosidad": false,
+          "antigüedad laboral en meses": 48,
+          "años como cliente": 7,
+          "nómina domiciliada": true,
+          "impagos previos": false
+        },
+        "Perfil financiero": {
+          "puntuación del modelo": 760,
+          "ratio de endeudamiento": 50.1,
+          "ingresos anuales": 24000
+        }
+      },
+      "esperado": {
+        "decisión": "Denegar",
+        "límite concedido": 0,
+        "motivos de denegación": [
+          "Endeudamiento superior al 50 %"
+        ]
+      }
+    },
+    {
+      "id": "B10",
+      "tipo": "Frontera",
+      "descripcion": "Edad 17: se deniega",
+      "entrada": {
+        "Solicitante": {
+          "edad": 17,
+          "en fichero de morosidad": false,
+          "antigüedad laboral en meses": 48,
+          "años como cliente": 7,
+          "nómina domiciliada": true,
+          "impagos previos": false
+        },
+        "Perfil financiero": {
+          "puntuación del modelo": 760,
+          "ratio de endeudamiento": 28,
+          "ingresos anuales": 24000
+        }
+      },
+      "esperado": {
+        "decisión": "Denegar",
+        "límite concedido": 0,
+        "motivos de denegación": [
+          "Menor de edad"
+        ]
+      }
+    },
+    {
+      "id": "B11",
+      "tipo": "Frontera",
+      "descripcion": "Edad 18: se aprueba",
+      "entrada": {
+        "Solicitante": {
+          "edad": 18,
+          "en fichero de morosidad": false,
+          "antigüedad laboral en meses": 48,
+          "años como cliente": 7,
+          "nómina domiciliada": true,
+          "impagos previos": false
+        },
+        "Perfil financiero": {
+          "puntuación del modelo": 760,
+          "ratio de endeudamiento": 28,
+          "ingresos anuales": 24000
+        }
+      },
+      "esperado": {
+        "decisión": "Aprobar",
+        "límite concedido": 6000,
+        "motivos de denegación": []
+      }
+    },
+    {
+      "id": "B12",
+      "tipo": "Datos ausentes",
+      "descripcion": "Sin ingresos anuales: no se puede calcular el tope",
+      "entrada": {
+        "Solicitante": {
+          "edad": 35,
+          "en fichero de morosidad": false,
+          "antigüedad laboral en meses": 48,
+          "años como cliente": 7,
+          "nómina domiciliada": true,
+          "impagos previos": false
+        },
+        "Perfil financiero": {
+          "puntuación del modelo": 760,
+          "ratio de endeudamiento": 28
+        }
+      },
+      "esperado": {
+        "decisión": "Revisar",
+        "límite concedido": 0,
+        "motivos de denegación": []
+      }
+    },
+    {
+      "id": "B13",
+      "tipo": "Datos imposibles",
+      "descripcion": "Puntuación del modelo 1 200, fuera de escala",
+      "entrada": {
+        "Solicitante": {
+          "edad": 35,
+          "en fichero de morosidad": false,
+          "antigüedad laboral en meses": 48,
+          "años como cliente": 7,
+          "nómina domiciliada": true,
+          "impagos previos": false
+        },
+        "Perfil financiero": {
+          "puntuación del modelo": 1200,
+          "ratio de endeudamiento": 28,
+          "ingresos anuales": 24000
+        }
+      },
+      "esperado": {
+        "decisión": "Revisar",
+        "límite concedido": 0,
+        "motivos de denegación": []
+      }
+    },
+    {
+      "id": "B14",
+      "tipo": "Contrato",
+      "descripcion": "Endeudamiento enviado como texto (\"28 %\"): el motor lo convierte en null",
+      "entrada": {
+        "Solicitante": {
+          "edad": 35,
+          "en fichero de morosidad": false,
+          "antigüedad laboral en meses": 48,
+          "años como cliente": 7,
+          "nómina domiciliada": true,
+          "impagos previos": false
+        },
+        "Perfil financiero": {
+          "puntuación del modelo": 760,
+          "ratio de endeudamiento": "28 %",
+          "ingresos anuales": 24000
+        }
+      },
+      "esperado": {
+        "decisión": "Revisar",
+        "límite concedido": 0,
+        "motivos de denegación": []
+      }
+    }
+  ]
+}

@@ -4,7 +4,7 @@
 Uso:
   python3 pruebas/probar.py                          # todas las baterías de ./escenarios contra http://localhost:8080
   python3 pruebas/probar.py --url http://host:8080 --carpeta escenarios --salida informe
-  python3 pruebas/probar.py escenarios/FRIOCAMPO_planificar_entrega.json   # una batería concreta
+  python3 pruebas/probar.py escenarios/BANCOSUR_evaluacion_solicitud.json   # una batería concreta
 
 Genera en la carpeta de salida:
   informe.html      informe visual (verde = coincide, rojo = no coincide)

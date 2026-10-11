@@ -25,7 +25,7 @@ Se crea vuestra propia copia y se abre en el navegador un editor parecido a Visu
 
 ### 2. Esperad a que se prepare
 
-La **primera vez** tarda unos 2–3 minutos: instala Java, descarga el motor y compila el ejemplo. Veréis el progreso en el terminal de la parte inferior. Las siguientes veces se abre en segundos.
+La **primera vez** tarda unos 2–3 minutos: instala Java, descarga el motor y compila el ejemplo (la solicitud de tarjeta de BANCOSUR). Veréis el progreso en el terminal de la parte inferior. Las siguientes veces se abre en segundos.
 
 Cuando el servicio está listo, el terminal muestra una línea como esta:
 
@@ -58,14 +58,14 @@ En Swagger UI, por cada modelo veréis estas operaciones:
 
 ### 4. Llamad al servicio
 
-1. Desplegad la operación `POST /T4_FRIOCAMPO_Entrega/Planificar entrega`.
+1. Desplegad la operación `POST /T4_BANCOSUR_Tarjeta/Evaluación de la solicitud`.
 2. Pulsad **Try it out**.
-3. En *Request body* pegad el contenido de un fichero de la carpeta `peticiones` (por ejemplo, `friocampo_granada.json`).
+3. En *Request body* pegad el contenido de un fichero de la carpeta `peticiones` (por ejemplo, `bancosur_aprobar.json`).
 4. Pulsad **Execute**.
 
 ![Petición en Swagger UI](docs/img/02_try_it_out.png)
 
-Debajo aparece la respuesta: el **código** (200 si todo ha ido bien) y el **cuerpo** JSON con el resultado: como es un servicio de decisión, solo la decisión de salida, la planificación. Probad la misma petición con `POST /T4_FRIOCAMPO_Entrega` y comparad: el modelo completo devuelve también todas las decisiones intermedias. Swagger muestra además la orden `curl` equivalente, por si queréis repetir la llamada desde un terminal.
+Debajo aparece la respuesta: el **código** (200 si todo ha ido bien) y el **cuerpo** JSON con el resultado: como es un servicio de decisión, solo la decisión de salida, el resultado de la solicitud. Probad la misma petición con `POST /T4_BANCOSUR_Tarjeta` y comparad: el modelo completo devuelve también todas las decisiones intermedias. Probad también las otras peticiones de la carpeta: la que no trae ingresos y la que trae el endeudamiento escrito como texto. Swagger muestra además la orden `curl` equivalente, por si queréis repetir la llamada desde un terminal.
 
 ![Respuesta del servicio](docs/img/03_respuesta.png)
 
@@ -91,7 +91,7 @@ Una **batería** es un fichero `.json` de la carpeta `escenarios` con una lista 
 
 ![Resultado de una batería](docs/img/05_pruebas_resultado.png)
 
-Para crear vuestra batería, copiad `escenarios/FRIOCAMPO_planificar_entrega.json`, cambiadle el nombre y editadlo:
+Para crear vuestra batería, copiad `escenarios/BANCOSUR_evaluacion_solicitud.json`, cambiadle el nombre y editadlo:
 
 ```json
 {
@@ -112,7 +112,7 @@ Para crear vuestra batería, copiad `escenarios/FRIOCAMPO_planificar_entrega.jso
 ```
 
 - Si el modelo no tiene servicios de decisión, quitad la línea `"servicio"`: se llamará al modelo completo.
-- En `esperado` solo hace falta poner los campos que queréis comprobar. Para entrar en un campo de un resultado estructurado se usa el punto: `"Planificación de la entrega.coste"`. Si el servicio devuelve un valor simple (un número, un texto), la clave es `"resultado"`.
+- En `esperado` solo hace falta poner los campos que queréis comprobar. Para entrar en un campo de un resultado estructurado se usa el punto: `"Resultado de la solicitud.límite concedido"` si llamáis al modelo completo. Si el servicio devuelve directamente el resultado estructurado, como «Evaluación de la solicitud», se usan sus campos: `"límite concedido"`. Si el servicio devuelve un valor simple (un número, un texto), la clave es `"resultado"`.
 - Si esperáis que el servicio responda con un error, añadid `"http": 500` (o el código que corresponda) y, en `esperado`, un trozo del mensaje: `"mensaje": "is not allowed by the declared type"`.
 - Pulsad **Recargar baterías** después de guardar el fichero; no hace falta reiniciar el servicio.
 
@@ -123,14 +123,14 @@ Las mismas baterías se pueden lanzar desde el terminal con `python3 pruebas/pro
 Una **simulación** evalúa muchos casos con la versión actual de un modelo y con la nueva, y muestra qué cambia: cuántos casos cambian de resultado, en qué sentido y cuánto. La prueba dice si la regla hace lo que se pidió; la simulación dice qué le pasará al negocio.
 
 1. En la página **Pruebas**, abrid la pestaña **Simulaciones**.
-2. Pulsad **Simular**. El ejemplo de BANCOSUR evalúa 1 000 solicitudes sintéticas con la política 1.0 y la 1.1.
+2. Pulsad **Simular**. El ejemplo de BANCOSUR evalúa 1 000 solicitudes sintéticas con la política 1.0.0 y la 1.0.1.
 3. Mirad los gráficos (pasad el ratón por encima de las barras), la **matriz de cambios** y la lista de casos que cambian. **Descargar Excel** guarda el resumen y todos los casos.
 
 ![Simulación de BANCOSUR](docs/img/06_simulacion.png)
 
 Para crear vuestra simulación necesitáis las dos versiones del modelo en `modelos`, cada una con su propio nombre de modelo, y dos ficheros en la carpeta `simulaciones`:
 
-- Un **CSV con los casos** (se puede preparar en Excel y guardar como CSV): una columna por dato de entrada, con el mismo nombre que en el modelo, y una columna `id`.
+- Un **CSV con los casos** (se puede preparar en Excel y guardar como CSV): una columna por dato de entrada, con el mismo nombre que en el modelo, y una columna `id`. Si un dato de entrada es estructurado, hay una columna por campo con el nombre `Dato.campo`, por ejemplo `Perfil financiero.ingresos anuales`.
 - Un **fichero `.json`** que dice qué comparar. Copiad `simulaciones/BANCOSUR_umbral_endeudamiento.json` y cambiad:
 
 ```json
@@ -148,6 +148,7 @@ Para crear vuestra simulación necesitáis las dos versiones del modelo en `mode
 ```
 
 - `categoria` dibuja un gráfico de barras y una matriz de cambios; `numero` muestra el total con cada versión y la diferencia.
+- Para comparar un campo de un resultado estructurado se usa el punto (`"Resultado de la solicitud.decisión"`), y `"etiqueta"` le pone un nombre más corto en los gráficos.
 - Si queréis llamar a un servicio de decisión en lugar del modelo completo, añadid `"servicio": "Nombre del servicio"` dentro de `actual` y de `nueva`.
 - Pulsad **Recargar simulaciones** después de guardar los ficheros.
 
@@ -175,8 +176,8 @@ Para guardar los modelos en vuestro repositorio de GitHub: icono de **Source Con
 
 | Carpeta o fichero | Qué contiene |
 |---|---|
-| `modelos/` | Los modelos DMN que se publican (atajo a `src/main/resources/modelos`): FRIOCAMPO y las dos versiones de la política de BANCOSUR |
-| `peticiones/` | Peticiones JSON de ejemplo para el modelo de FRIOCAMPO |
+| `modelos/` | Los modelos DMN que se publican (atajo a `src/main/resources/modelos`): las dos versiones de la política de riesgos de BANCOSUR (1.0.0 y 1.0.1) |
+| `peticiones/` | Peticiones JSON de ejemplo para el modelo de BANCOSUR |
 | `escenarios/` | Baterías de escenarios que ejecuta la página Pruebas |
 | `simulaciones/` | Simulaciones (configuración y casos en CSV) que ejecuta la pestaña Simulaciones |
 | `pruebas/probar.py` | Las mismas pruebas desde el terminal, con informe HTML y Excel |

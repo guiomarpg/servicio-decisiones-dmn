@@ -61,6 +61,17 @@ let BATERIAS = [], RESULTADOS = {};
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt = v => typeof v === 'string' ? v : (v === undefined ? '(no aparece)' : JSON.stringify(v));
 
+// Las columnas «Dato.campo» del CSV se envían como un objeto: {"Dato": {"campo": valor}}
+const nom = f => f.etiqueta || f.campo;
+function anidar(pares) {
+  const o = {};
+  for (const [k, v] of pares) {
+    const ps = k.split('.'); let a = o;
+    ps.slice(0, -1).forEach(p => { a = a[p] = (a[p] && typeof a[p] === 'object') ? a[p] : {}; });
+    a[ps[ps.length - 1]] = v;
+  }
+  return o;
+}
 function obtener(resp, ruta) {
   if (ruta === 'resultado' || ruta === '$') return [resp, true];
   let a = resp;
@@ -203,7 +214,7 @@ async function ejecutarSim(i) {
   document.getElementById('cuerpo' + i).innerHTML = `<div class="progreso"><div id="prog${i}"></div></div><small>Evaluando ${n0(casos.length)} casos con las dos versiones…</small>`;
   async function trabajador() {
     while (sig < casos.length) {
-      const k = sig++, c = casos[k], cuerpo = Object.fromEntries(Object.entries(c).filter(([x]) => x !== idc));
+      const k = sig++, c = casos[k], cuerpo = anidar(Object.entries(c).filter(([x]) => x !== idc));
       const [a, n] = await Promise.all([llamar(s.actual, cuerpo), llamar(s.nueva, cuerpo)]);
       res[k] = {id: c[idc] !== undefined ? c[idc] : k + 1, caso: c, a, n};
       if (++hechos % 25 === 0) barra();
@@ -247,7 +258,7 @@ function barras(c, s, i, j) {
       `<rect x="0" y="${y - 2}" width="${ancho}" height="${fila - 2}" fill="transparent"/>` +
       `<text x="${izq - 8}" y="${y + 19}" font-size="13" text-anchor="end" fill="#202124">${esc(cat)}</text>` +
       barra(y, c.cA[k], C_ACT) + barra(y + 16, c.cN[k], C_NUE) + '</g>'; }).join('');
-  return `<svg viewBox="0 0 ${ancho} ${alto}" width="100%" style="max-width:${ancho}px" role="img" aria-label="${esc(c.f.campo)}: ${esc(s.actual.etiqueta || 'actual')} frente a ${esc(s.nueva.etiqueta || 'nueva')}">` +
+  return `<svg viewBox="0 0 ${ancho} ${alto}" width="100%" style="max-width:${ancho}px" role="img" aria-label="${esc(nom(c.f))}: ${esc(s.actual.etiqueta || 'actual')} frente a ${esc(s.nueva.etiqueta || 'nueva')}">` +
          `<line x1="${izq}" y1="0" x2="${izq}" y2="${alto}" stroke="#DADCE0"/>${g}</svg>`;
 }
 
@@ -271,13 +282,13 @@ function pintarSim() {
       cuerpo = `<div class="kpis"><div class="kpi"><b>${n0(R.res.length)}</b>casos</div>` +
         `<div class="kpi ${R.errores.length ? 'ko' : ''}"><b>${n0(R.errores.length)}</b>con error</div>` +
         `<div class="kpi"><b>${n0(R.conCambio.length)}</b>cambian algo</div>` +
-        R.campos.map(c => `<div class="kpi"><b>${n0(c.cambian)}</b>cambian de ${esc(c.f.campo.toLowerCase())}</div>`).join('') + '</div>' +
+        R.campos.map(c => `<div class="kpi"><b>${n0(c.cambian)}</b>cambian de ${esc(nom(c.f).toLowerCase())}</div>`).join('') + '</div>' +
         (R.errores.length ? `<div class="aviso error">${n0(R.errores.length)} casos no se han podido evaluar y no cuentan en los resultados. Primer error: ${esc((R.errores[0].a.error || R.errores[0].n.error || '').slice(0, 250))}</div>` : '') +
         `<div class="leyenda"><span><i style="background:${C_ACT}"></i>${la} (${esc(s.actual.modelo)})</span><span><i style="background:${C_NUE}"></i>${ln} (${esc(s.nueva.modelo)})</span></div>` +
-        `<div class="graficos">` + cat.map((c, j) => `<div class="graf"><h3>${esc(c.f.campo)}</h3><p class="nota">Número de casos en cada valor, con cada versión.</p>${barras(c, s, i, j)}` +
+        `<div class="graficos">` + cat.map((c, j) => `<div class="graf"><h3>${esc(nom(c.f))}</h3><p class="nota">Número de casos en cada valor, con cada versión.</p>${barras(c, s, i, j)}` +
           `<h3 class="sub">Matriz de cambios</h3><p class="nota">Filas: valor con ${la}. Columnas: valor con ${ln}. En naranja, los casos que cambian.</p>${matriz(c, s)}</div>`).join('') + '</div>' +
         num.map(c => { const u = c.f.unidad ? ' ' + esc(c.f.unidad) : '';
-          return `<h3 class="sub">${esc(c.f.campo)}</h3><div class="kpis"><div class="kpi"><b>${n0(c.totA)}${u}</b>total con ${la}</div><div class="kpi"><b>${n0(c.totN)}${u}</b>total con ${ln}</div>` +
+          return `<h3 class="sub">${esc(nom(c.f))}</h3><div class="kpis"><div class="kpi"><b>${n0(c.totA)}${u}</b>total con ${la}</div><div class="kpi"><b>${n0(c.totN)}${u}</b>total con ${ln}</div>` +
             `<div class="kpi"><b>${sg(c.totN - c.totA)}${u}</b>diferencia total</div><div class="kpi"><b>${n0(c.cambian)}</b>casos que cambian</div>` +
             `<div class="kpi"><b>${sg(c.difMedia)}${u}</b>cambio medio en esos casos</div></div>`; }).join('') +
         tablaCambios(s, R);
@@ -298,7 +309,7 @@ function pintarSim() {
 function tablaCambios(s, R) {
   const MAX = 100, mostrar = s.mostrar || [], filas = R.conCambio.slice(0, MAX);
   if (!R.conCambio.length) return '<h3 class="sub">Casos que cambian</h3><p>Ningún caso cambia: las dos versiones dan los mismos resultados.</p>';
-  const cab = `<tr><th>${esc(s.id || 'id')}</th>${mostrar.map(m => `<th>${esc(m)}</th>`).join('')}${(s.comparar || []).map(f => `<th>${esc(f.campo)}</th>`).join('')}</tr>`;
+  const cab = `<tr><th>${esc(s.id || 'id')}</th>${mostrar.map(m => `<th>${esc(m.split('.').pop())}</th>`).join('')}${(s.comparar || []).map(f => `<th>${esc(nom(f))}</th>`).join('')}</tr>`;
   const cuerpo = filas.map(r => `<tr><td>${esc(r.id)}</td>${mostrar.map(m => `<td>${esc(etq(r.caso[m]))}</td>`).join('')}` +
     (s.comparar || []).map(f => { const a = valor(r.a, f.campo), n = valor(r.n, f.campo);
       return iguales(a, n) ? `<td>${esc(etq(a))}</td>` : `<td><b>${esc(etq(a))} → ${esc(etq(n))}</b></td>`; }).join('') + '</tr>').join('');
@@ -311,12 +322,12 @@ async function excelSim(i) {
   const s = SIMS[i], R = SIMRES[i], la = s.actual.etiqueta || 'Actual', ln = s.nueva.etiqueta || 'Nueva';
   const resumen = [['Indicador', la, ln, 'Diferencia'], ['Casos evaluados', R.ok.length, R.ok.length, 0], ['Casos con error', R.errores.length, '', '']];
   R.campos.forEach(c => {
-    if (c.f.tipo === 'numero') { resumen.push([c.f.campo + ' · total', c.totA, c.totN, c.totN - c.totA], [c.f.campo + ' · media', c.medA, c.medN, c.medN - c.medA]); }
-    else c.cats.forEach((x, k) => resumen.push([c.f.campo + ' · ' + x, c.cA[k], c.cN[k], c.cN[k] - c.cA[k]]));
-    resumen.push([c.f.campo + ' · casos que cambian', '', '', c.cambian]);
+    if (c.f.tipo === 'numero') { resumen.push([nom(c.f) + ' · total', c.totA, c.totN, c.totN - c.totA], [nom(c.f) + ' · media', c.medA, c.medN, c.medN - c.medA]); }
+    else c.cats.forEach((x, k) => resumen.push([nom(c.f) + ' · ' + x, c.cA[k], c.cN[k], c.cN[k] - c.cA[k]]));
+    resumen.push([nom(c.f) + ' · casos que cambian', '', '', c.cambian]);
   });
   const mostrar = Object.keys((s.casos || [])[0] || {}).filter(k => k !== (s.id || 'id'));
-  const casos = [[s.id || 'id'].concat(mostrar, ...(s.comparar || []).map(f => [f.campo + ' · ' + la, f.campo + ' · ' + ln]), ['¿Cambia?', 'Error'])];
+  const casos = [[s.id || 'id'].concat(mostrar, ...(s.comparar || []).map(f => [nom(f) + ' · ' + la, nom(f) + ' · ' + ln]), ['¿Cambia?', 'Error'])];
   R.res.forEach(r => {
     const cmp = (s.comparar || []).map(f => [valor(r.a, f.campo), valor(r.n, f.campo)]);
     casos.push([r.id].concat(mostrar.map(m => r.caso[m] === undefined ? '' : r.caso[m]), ...cmp.map(([a, n]) => [xv(a), xv(n)]),
