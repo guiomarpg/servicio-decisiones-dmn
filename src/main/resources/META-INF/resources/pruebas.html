@@ -26,18 +26,34 @@ ul.chk{margin:0;padding:0;list-style:none}.chk .bad{color:var(--ko);font-weight:
 details summary{cursor:pointer;color:var(--azul-o)}pre{background:#F1F3F4;padding:8px;border-radius:4px;max-height:260px;overflow:auto;font-size:12px;white-space:pre-wrap}
 code{font-family:Consolas,monospace}.aviso{background:#fff;border:1px solid var(--borde);border-left:4px solid var(--azul);border-radius:6px;padding:12px 16px;margin-bottom:18px}
 .error{border-left-color:var(--ko)}
+.tabs{display:flex;gap:4px;padding:0 24px;background:var(--azul-o)}.tabs button{background:transparent;color:#fff;border-radius:6px 6px 0 0;padding:9px 18px;opacity:.75}
+.tabs button.act{background:var(--fondo);color:var(--azul-o);opacity:1}.oculto{display:none!important}
+.sim-cuerpo{padding:14px 16px}.graficos{display:flex;flex-wrap:wrap;gap:18px;margin-bottom:8px}.graf{flex:1 1 460px;border:1px solid var(--borde);border-radius:8px;padding:12px 14px}
+.graf h3{margin:0 0 4px;font-size:15px}.graf .nota{color:var(--gris);font-size:12.5px;margin:0 0 8px}.leyenda{display:flex;gap:16px;font-size:13px;color:var(--gris);margin:2px 0 6px}
+.leyenda i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+table.mat{width:auto;margin-top:10px}table.mat td,table.mat th{text-align:right;padding:5px 10px}table.mat th:first-child,table.mat td:first-child{text-align:left}
+table.mat td.cambio{background:#FFF4E5;font-weight:700}table.mat td.cero{color:#B0B3B8}.kpi small{color:var(--gris)}
+.progreso{height:6px;background:var(--borde);border-radius:3px;overflow:hidden;margin:8px 0}.progreso div{height:100%;background:var(--azul);width:0}
+#tip{position:fixed;pointer-events:none;background:#fff;border:1px solid var(--borde);box-shadow:0 2px 8px rgba(0,0,0,.15);border-radius:6px;padding:8px 10px;font-size:13px;display:none;z-index:9}
+h3.sub{font-size:15px;margin:16px 0 6px}
 </style>
 </head>
 <body>
 <header>
-  <div><h1>Pruebas de los servicios de decisión</h1>
-  <p>Baterías de la carpeta <code>escenarios</code> · <a href="/q/swagger-ui/">Swagger UI</a></p></div>
-  <div><button id="todas">Ejecutar todas</button> <button id="excel" class="sec" disabled>Descargar Excel</button> <button id="recargar" class="sec">Recargar baterías</button></div>
+  <div><h1>Pruebas y simulaciones de los servicios de decisión</h1>
+  <p id="subt">Baterías de la carpeta <code>escenarios</code> · <a href="/q/swagger-ui/">Swagger UI</a></p></div>
+  <div id="acc-pruebas"><button id="todas">Ejecutar todas</button> <button id="excel" class="sec" disabled>Descargar Excel</button> <button id="recargar" class="sec">Recargar baterías</button></div>
+  <div id="acc-sim" class="oculto"><button id="recargar-sim" class="sec">Recargar simulaciones</button></div>
 </header>
+<nav class="tabs"><button id="tab-pruebas" class="act">Pruebas</button><button id="tab-sim">Simulaciones</button></nav>
 <main>
-  <div class="kpis" id="kpis"></div>
-  <div id="baterias"><div class="aviso">Cargando baterías…</div></div>
+  <div id="vista-pruebas">
+    <div class="kpis" id="kpis"></div>
+    <div id="baterias"><div class="aviso">Cargando baterías…</div></div>
+  </div>
+  <div id="vista-sim" class="oculto"><div id="simulaciones"><div class="aviso">Cargando simulaciones…</div></div></div>
 </main>
+<div id="tip"></div>
 <script>
 const TOL = 0.005;
 let BATERIAS = [], RESULTADOS = {};
@@ -156,6 +172,189 @@ async function excel() {
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'})); a.download = 'resultados_pruebas.csv'; a.click();
   }
 }
+
+/* ---------- Simulaciones ---------- */
+const C_ACT = '#2a78d6', C_NUE = '#eb6834';   // paleta validada (azul = actual, naranja = nueva)
+const nf = new Intl.NumberFormat('es-ES', {useGrouping: 'always', maximumFractionDigits: 2});
+const n0 = v => nf.format(Math.round(v));
+const sg = v => (v > 0 ? '+' : v < 0 ? '−' : '') + nf.format(Math.abs(Math.round(v * 100) / 100));
+const etq = v => v === null || v === undefined ? '(sin valor)' : (typeof v === 'object' ? JSON.stringify(v) : String(v));
+const xv = v => v === undefined || v === null ? '' : (typeof v === 'object' ? JSON.stringify(v) : v);   // valor para Excel: números como números
+let SIMS = [], SIMRES = {};
+
+function urlModelo(m) { return '/' + [m.modelo].concat(m.servicio ? [m.servicio] : []).map(encodeURIComponent).join('/'); }
+
+async function llamar(m, caso) {
+  try {
+    const r = await fetch(urlModelo(m), {method: 'POST', headers: {'Content-Type': 'application/json', 'Accept': 'application/json'}, body: JSON.stringify(caso)});
+    const t = await r.text(); let d; try { d = JSON.parse(t); } catch (_) { d = t; }
+    if (r.status !== 200) {
+      const msg = d && d.messages ? (d.messages.find(x => x.severity === 'ERROR') || d.messages[0] || {}).message : String(t).slice(0, 200);
+      return {error: 'HTTP ' + r.status + (msg ? ': ' + msg : '')};
+    }
+    return {resp: d};
+  } catch (e) { return {error: 'No se puede llamar al servicio: ' + e}; }
+}
+
+async function ejecutarSim(i) {
+  const s = SIMS[i], casos = s.casos || [], idc = s.id || 'id', res = new Array(casos.length);
+  let hechos = 0, sig = 0;
+  const barra = () => { const b = document.getElementById('prog' + i); if (b) b.style.width = (100 * hechos / casos.length) + '%'; };
+  document.getElementById('cuerpo' + i).innerHTML = `<div class="progreso"><div id="prog${i}"></div></div><small>Evaluando ${n0(casos.length)} casos con las dos versiones…</small>`;
+  async function trabajador() {
+    while (sig < casos.length) {
+      const k = sig++, c = casos[k], cuerpo = Object.fromEntries(Object.entries(c).filter(([x]) => x !== idc));
+      const [a, n] = await Promise.all([llamar(s.actual, cuerpo), llamar(s.nueva, cuerpo)]);
+      res[k] = {id: c[idc] !== undefined ? c[idc] : k + 1, caso: c, a, n};
+      if (++hechos % 25 === 0) barra();
+    }
+  }
+  await Promise.all(Array.from({length: 8}, trabajador));
+  SIMRES[i] = analizar(s, res);
+  pintarSim();
+}
+
+function valor(r, campo) { if (!r.resp) return undefined; return campo === 'resultado' ? r.resp : obtener(r.resp, campo)[0]; }
+
+function analizar(s, res) {
+  const ok = res.filter(r => r.a.resp !== undefined && r.n.resp !== undefined), errores = res.filter(r => !(r.a.resp !== undefined && r.n.resp !== undefined));
+  const campos = (s.comparar || []).map(f => {
+    const A = ok.map(r => valor(r.a, f.campo)), N = ok.map(r => valor(r.n, f.campo));
+    const cambian = ok.filter((r, k) => !iguales(A[k], N[k])).length;
+    if (f.tipo === 'numero') {
+      const a = A.map(Number).map(x => isNaN(x) ? 0 : x), n = N.map(Number).map(x => isNaN(x) ? 0 : x);
+      const sum = v => v.reduce((x, y) => x + y, 0), dif = a.map((x, k) => n[k] - x).filter(d => Math.abs(d) > TOL);
+      return {f, cambian, totA: sum(a), totN: sum(n), medA: a.length ? sum(a) / a.length : 0, medN: n.length ? sum(n) / n.length : 0, difMedia: dif.length ? sum(dif) / dif.length : 0};
+    }
+    const cats = [...(f.orden || [])];
+    A.concat(N).map(etq).forEach(c => { if (!cats.includes(c)) cats.push(c); });
+    const idx = Object.fromEntries(cats.map((c, k) => [c, k]));
+    const cA = cats.map(() => 0), cN = cats.map(() => 0), mat = cats.map(() => cats.map(() => 0));
+    A.forEach((v, k) => { const x = idx[etq(v)], y = idx[etq(N[k])]; cA[x]++; cN[y]++; mat[x][y]++; });
+    return {f, cambian, cats, cA, cN, mat};
+  });
+  const conCambio = ok.filter(r => (s.comparar || []).some(f => !iguales(valor(r.a, f.campo), valor(r.n, f.campo))));
+  return {res, ok, errores, campos, conCambio};
+}
+
+function barras(c, s, i, j) {
+  const fila = 40, izq = 96, der = 70, ancho = 520, alto = c.cats.length * fila + 6, max = Math.max(1, ...c.cA, ...c.cN), w = ancho - izq - der;
+  const barra = (y, v, col) => { const L = Math.max(v ? 2 : 0, w * v / max), r = Math.min(4, L / 2), x = izq;
+    return `<path d="M${x},${y}h${L - r}a${r},${r} 0 0 1 ${r},${r}v${14 - 2 * r}a${r},${r} 0 0 1 -${r},${r}h-${L - r}z" fill="${col}"/>` +
+           `<text x="${x + L + 6}" y="${y + 11}" font-size="12" fill="#202124">${n0(v)}</text>`; };
+  const g = c.cats.map((cat, k) => { const y = k * fila + 4;
+    return `<g class="fila" data-tip="${esc(JSON.stringify({cat, a: c.cA[k], n: c.cN[k], la: s.actual.etiqueta || 'Actual', ln: s.nueva.etiqueta || 'Nueva'}))}">` +
+      `<rect x="0" y="${y - 2}" width="${ancho}" height="${fila - 2}" fill="transparent"/>` +
+      `<text x="${izq - 8}" y="${y + 19}" font-size="13" text-anchor="end" fill="#202124">${esc(cat)}</text>` +
+      barra(y, c.cA[k], C_ACT) + barra(y + 16, c.cN[k], C_NUE) + '</g>'; }).join('');
+  return `<svg viewBox="0 0 ${ancho} ${alto}" width="100%" style="max-width:${ancho}px" role="img" aria-label="${esc(c.f.campo)}: ${esc(s.actual.etiqueta || 'actual')} frente a ${esc(s.nueva.etiqueta || 'nueva')}">` +
+         `<line x1="${izq}" y1="0" x2="${izq}" y2="${alto}" stroke="#DADCE0"/>${g}</svg>`;
+}
+
+function matriz(c, s) {
+  const cab = `<tr><th>${esc(s.actual.etiqueta || 'Actual')} ↓ / ${esc(s.nueva.etiqueta || 'Nueva')} →</th>${c.cats.map(x => `<th>${esc(x)}</th>`).join('')}<th>Total</th></tr>`;
+  const filas = c.cats.map((x, a) => `<tr><td><b>${esc(x)}</b></td>${c.cats.map((y, n) => { const v = c.mat[a][n];
+      return `<td class="${v === 0 ? 'cero' : a !== n ? 'cambio' : ''}">${n0(v)}</td>`; }).join('')}<td>${n0(c.cA[a])}</td></tr>`).join('');
+  const tot = `<tr><td><b>Total</b></td>${c.cN.map(v => `<td>${n0(v)}</td>`).join('')}<td>${n0(c.cA.reduce((x, y) => x + y, 0))}</td></tr>`;
+  return `<div class="tabla"><table class="mat">${cab}${filas}${tot}</table></div>`;
+}
+
+function pintarSim() {
+  const cont = document.getElementById('simulaciones');
+  if (!SIMS.length) { cont.innerHTML = '<div class="aviso">No hay simulaciones. Añadid un fichero <code>.json</code> a la carpeta <code>simulaciones</code> y pulsad «Recargar simulaciones».</div>'; return; }
+  cont.innerHTML = SIMS.map((s, i) => {
+    if (s.error) return `<div class="aviso error"><b>${esc(s.fichero)}</b>: ${esc(s.error)}</div>`;
+    const R = SIMRES[i], la = esc(s.actual.etiqueta || 'Actual'), ln = esc(s.nueva.etiqueta || 'Nueva');
+    let cuerpo = `<small>Pulsad «Simular» para evaluar los ${n0((s.casos || []).length)} casos con las dos versiones.</small>`;
+    if (R) {
+      const cat = R.campos.filter(c => c.f.tipo !== 'numero'), num = R.campos.filter(c => c.f.tipo === 'numero');
+      cuerpo = `<div class="kpis"><div class="kpi"><b>${n0(R.res.length)}</b>casos</div>` +
+        `<div class="kpi ${R.errores.length ? 'ko' : ''}"><b>${n0(R.errores.length)}</b>con error</div>` +
+        `<div class="kpi"><b>${n0(R.conCambio.length)}</b>cambian algo</div>` +
+        R.campos.map(c => `<div class="kpi"><b>${n0(c.cambian)}</b>cambian de ${esc(c.f.campo.toLowerCase())}</div>`).join('') + '</div>' +
+        (R.errores.length ? `<div class="aviso error">${n0(R.errores.length)} casos no se han podido evaluar y no cuentan en los resultados. Primer error: ${esc((R.errores[0].a.error || R.errores[0].n.error || '').slice(0, 250))}</div>` : '') +
+        `<div class="leyenda"><span><i style="background:${C_ACT}"></i>${la} (${esc(s.actual.modelo)})</span><span><i style="background:${C_NUE}"></i>${ln} (${esc(s.nueva.modelo)})</span></div>` +
+        `<div class="graficos">` + cat.map((c, j) => `<div class="graf"><h3>${esc(c.f.campo)}</h3><p class="nota">Número de casos en cada valor, con cada versión.</p>${barras(c, s, i, j)}` +
+          `<h3 class="sub">Matriz de cambios</h3><p class="nota">Filas: valor con ${la}. Columnas: valor con ${ln}. En naranja, los casos que cambian.</p>${matriz(c, s)}</div>`).join('') + '</div>' +
+        num.map(c => { const u = c.f.unidad ? ' ' + esc(c.f.unidad) : '';
+          return `<h3 class="sub">${esc(c.f.campo)}</h3><div class="kpis"><div class="kpi"><b>${n0(c.totA)}${u}</b>total con ${la}</div><div class="kpi"><b>${n0(c.totN)}${u}</b>total con ${ln}</div>` +
+            `<div class="kpi"><b>${sg(c.totN - c.totA)}${u}</b>diferencia total</div><div class="kpi"><b>${n0(c.cambian)}</b>casos que cambian</div>` +
+            `<div class="kpi"><b>${sg(c.difMedia)}${u}</b>cambio medio en esos casos</div></div>`; }).join('') +
+        tablaCambios(s, R);
+    }
+    return `<section><div class="cab"><h2>${esc(s.titulo || s.fichero)}</h2><div><button onclick="ejecutarSim(${i})">Simular</button> <button onclick="excelSim(${i})" ${R ? '' : 'disabled'}>Descargar Excel</button></div></div>` +
+      `<div class="meta">${esc(s.descripcion || '')}<br>${la}: <code>POST ${esc(decodeURIComponent(urlModelo(s.actual)))}</code> · ${ln}: <code>POST ${esc(decodeURIComponent(urlModelo(s.nueva)))}</code> · ` +
+      `${n0((s.casos || []).length)} casos${s.ficheroCasos ? ` de <code>${esc(s.ficheroCasos)}</code>` : ''} · fichero <code>${esc(s.fichero)}</code></div>` +
+      `<div class="sim-cuerpo" id="cuerpo${i}">${cuerpo}</div></section>`;
+  }).join('');
+  cont.querySelectorAll('g.fila').forEach(g => {
+    g.onmousemove = e => { const d = JSON.parse(g.dataset.tip), t = document.getElementById('tip');
+      t.innerHTML = `<b>${esc(d.cat)}</b><br><span style="color:${C_ACT}">■</span> ${esc(d.la)}: ${n0(d.a)}<br><span style="color:${C_NUE}">■</span> ${esc(d.ln)}: ${n0(d.n)}<br>Diferencia: ${sg(d.n - d.a)}`;
+      t.style.display = 'block'; t.style.left = Math.min(e.clientX + 14, innerWidth - 200) + 'px'; t.style.top = (e.clientY + 14) + 'px'; };
+    g.onmouseleave = () => { document.getElementById('tip').style.display = 'none'; };
+  });
+}
+
+function tablaCambios(s, R) {
+  const MAX = 100, mostrar = s.mostrar || [], filas = R.conCambio.slice(0, MAX);
+  if (!R.conCambio.length) return '<h3 class="sub">Casos que cambian</h3><p>Ningún caso cambia: las dos versiones dan los mismos resultados.</p>';
+  const cab = `<tr><th>${esc(s.id || 'id')}</th>${mostrar.map(m => `<th>${esc(m)}</th>`).join('')}${(s.comparar || []).map(f => `<th>${esc(f.campo)}</th>`).join('')}</tr>`;
+  const cuerpo = filas.map(r => `<tr><td>${esc(r.id)}</td>${mostrar.map(m => `<td>${esc(etq(r.caso[m]))}</td>`).join('')}` +
+    (s.comparar || []).map(f => { const a = valor(r.a, f.campo), n = valor(r.n, f.campo);
+      return iguales(a, n) ? `<td>${esc(etq(a))}</td>` : `<td><b>${esc(etq(a))} → ${esc(etq(n))}</b></td>`; }).join('') + '</tr>').join('');
+  return `<h3 class="sub">Casos que cambian (${n0(R.conCambio.length)})</h3>` +
+    (R.conCambio.length > MAX ? `<p class="nota">Se muestran los ${MAX} primeros; el Excel los incluye todos.</p>` : '') +
+    `<div class="tabla"><table>${cab}${cuerpo}</table></div>`;
+}
+
+async function excelSim(i) {
+  const s = SIMS[i], R = SIMRES[i], la = s.actual.etiqueta || 'Actual', ln = s.nueva.etiqueta || 'Nueva';
+  const resumen = [['Indicador', la, ln, 'Diferencia'], ['Casos evaluados', R.ok.length, R.ok.length, 0], ['Casos con error', R.errores.length, '', '']];
+  R.campos.forEach(c => {
+    if (c.f.tipo === 'numero') { resumen.push([c.f.campo + ' · total', c.totA, c.totN, c.totN - c.totA], [c.f.campo + ' · media', c.medA, c.medN, c.medN - c.medA]); }
+    else c.cats.forEach((x, k) => resumen.push([c.f.campo + ' · ' + x, c.cA[k], c.cN[k], c.cN[k] - c.cA[k]]));
+    resumen.push([c.f.campo + ' · casos que cambian', '', '', c.cambian]);
+  });
+  const mostrar = Object.keys((s.casos || [])[0] || {}).filter(k => k !== (s.id || 'id'));
+  const casos = [[s.id || 'id'].concat(mostrar, ...(s.comparar || []).map(f => [f.campo + ' · ' + la, f.campo + ' · ' + ln]), ['¿Cambia?', 'Error'])];
+  R.res.forEach(r => {
+    const cmp = (s.comparar || []).map(f => [valor(r.a, f.campo), valor(r.n, f.campo)]);
+    casos.push([r.id].concat(mostrar.map(m => r.caso[m] === undefined ? '' : r.caso[m]), ...cmp.map(([a, n]) => [xv(a), xv(n)]),
+      [r.a.error || r.n.error ? '' : (cmp.some(([a, n]) => !iguales(a, n)) ? 'Sí' : 'No'), r.a.error || r.n.error || '']));
+  });
+  const nombre = 'simulacion_' + s.fichero.replace(/\.json$/, '');
+  try {
+    if (!window.XLSX) await cargarScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+    const wb = XLSX.utils.book_new(), w1 = XLSX.utils.aoa_to_sheet(resumen), w2 = XLSX.utils.aoa_to_sheet(casos);
+    w1['!cols'] = [{wch: 44}, {wch: 14}, {wch: 14}, {wch: 12}];
+    XLSX.utils.book_append_sheet(wb, w1, 'Resumen'); XLSX.utils.book_append_sheet(wb, w2, 'Casos');
+    XLSX.writeFile(wb, nombre + '.xlsx');
+  } catch (e) {
+    const csv = '\uFEFF' + casos.map(f => f.map(x => '"' + String(x).replace(/"/g, '""') + '"').join(';')).join('\r\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'})); a.download = nombre + '.csv'; a.click();
+  }
+}
+
+async function cargarSim() {
+  SIMRES = {};
+  try { SIMS = await (await fetch('/pruebas/simulaciones')).json(); }
+  catch (e) { SIMS = []; document.getElementById('simulaciones').innerHTML = '<div class="aviso error">No se pueden leer las simulaciones: ' + esc(e) + '</div>'; return; }
+  pintarSim();
+}
+
+function pestana(p) {
+  const sim = p === 'simulaciones';
+  document.getElementById('tab-pruebas').classList.toggle('act', !sim); document.getElementById('tab-sim').classList.toggle('act', sim);
+  document.getElementById('vista-pruebas').classList.toggle('oculto', sim); document.getElementById('vista-sim').classList.toggle('oculto', !sim);
+  document.getElementById('acc-pruebas').classList.toggle('oculto', sim); document.getElementById('acc-sim').classList.toggle('oculto', !sim);
+  document.getElementById('subt').innerHTML = (sim ? 'Simulaciones de la carpeta <code>simulaciones</code>' : 'Baterías de la carpeta <code>escenarios</code>') + ' · <a href="/q/swagger-ui/">Swagger UI</a>';
+  history.replaceState(null, '', sim ? '#simulaciones' : '#pruebas');
+}
+document.getElementById('tab-pruebas').onclick = () => pestana('pruebas');
+document.getElementById('tab-sim').onclick = () => pestana('simulaciones');
+document.getElementById('recargar-sim').onclick = cargarSim;
+if (location.hash === '#simulaciones') pestana('simulaciones');
+cargarSim();
 
 document.getElementById('todas').onclick = async () => { for (let i = 0; i < BATERIAS.length; i++) if (!BATERIAS[i].error) await ejecutar(i); };
 document.getElementById('excel').onclick = excel;

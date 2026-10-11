@@ -11,7 +11,7 @@ Entorno para publicar vuestros modelos DMN como **servicios de decisión** y lla
 - Un navegador (Chrome, Edge o Firefox).
 - Una cuenta gratuita de GitHub: <https://github.com/signup>.
 
-GitHub da a cada cuenta gratuita una cuota mensual de horas de Codespaces; con parar el entorno al terminar (paso 7) os sobra para toda la asignatura.
+GitHub da a cada cuenta gratuita una cuota mensual de horas de Codespaces; con parar el entorno al terminar (paso 8) os sobra para toda la asignatura.
 
 ---
 
@@ -118,7 +118,40 @@ Para crear vuestra batería, copiad `escenarios/FRIOCAMPO_planificar_entrega.jso
 
 Las mismas baterías se pueden lanzar desde el terminal con `python3 pruebas/probar.py`, que genera un informe en la carpeta `informe`.
 
-### 7. Parad el entorno al terminar
+### 7. Simulad el impacto de un cambio
+
+Una **simulación** evalúa muchos casos con la versión actual de un modelo y con la nueva, y muestra qué cambia: cuántos casos cambian de resultado, en qué sentido y cuánto. La prueba dice si la regla hace lo que se pidió; la simulación dice qué le pasará al negocio.
+
+1. En la página **Pruebas**, abrid la pestaña **Simulaciones**.
+2. Pulsad **Simular**. El ejemplo de BANCOSUR evalúa 1 000 solicitudes sintéticas con la política 1.0 y la 1.1.
+3. Mirad los gráficos (pasad el ratón por encima de las barras), la **matriz de cambios** y la lista de casos que cambian. **Descargar Excel** guarda el resumen y todos los casos.
+
+![Simulación de BANCOSUR](docs/img/06_simulacion.png)
+
+Para crear vuestra simulación necesitáis las dos versiones del modelo en `modelos`, cada una con su propio nombre de modelo, y dos ficheros en la carpeta `simulaciones`:
+
+- Un **CSV con los casos** (se puede preparar en Excel y guardar como CSV): una columna por dato de entrada, con el mismo nombre que en el modelo, y una columna `id`.
+- Un **fichero `.json`** que dice qué comparar. Copiad `simulaciones/BANCOSUR_umbral_endeudamiento.json` y cambiad:
+
+```json
+{
+  "titulo": "Mi empresa · Qué cambio simulo",
+  "actual": { "modelo": "Modelo_v1", "etiqueta": "Versión actual" },
+  "nueva":  { "modelo": "Modelo_v2", "etiqueta": "Versión nueva" },
+  "casos": "mis_casos.csv",
+  "comparar": [
+    { "campo": "Resultado", "tipo": "categoria", "orden": ["Aprobar", "Revisar", "Denegar"] },
+    { "campo": "Importe", "tipo": "numero", "unidad": "€" }
+  ],
+  "mostrar": ["Dato de entrada que queréis ver en la lista"]
+}
+```
+
+- `categoria` dibuja un gráfico de barras y una matriz de cambios; `numero` muestra el total con cada versión y la diferencia.
+- Si queréis llamar a un servicio de decisión en lugar del modelo completo, añadid `"servicio": "Nombre del servicio"` dentro de `actual` y de `nueva`.
+- Pulsad **Recargar simulaciones** después de guardar los ficheros.
+
+### 8. Parad el entorno al terminar
 
 Id a <https://github.com/codespaces>, pulsad los tres puntos junto a vuestro codespace y elegid **Stop codespace**. Si se os olvida, se para solo tras 30 minutos sin uso. Vuestros ficheros se conservan; para volver, abrid el codespace desde esa misma página.
 
@@ -142,9 +175,10 @@ Para guardar los modelos en vuestro repositorio de GitHub: icono de **Source Con
 
 | Carpeta o fichero | Qué contiene |
 |---|---|
-| `modelos/` | Los modelos DMN que se publican (atajo a `src/main/resources/modelos`) |
+| `modelos/` | Los modelos DMN que se publican (atajo a `src/main/resources/modelos`): FRIOCAMPO y las dos versiones de la política de BANCOSUR |
 | `peticiones/` | Peticiones JSON de ejemplo para el modelo de FRIOCAMPO |
 | `escenarios/` | Baterías de escenarios que ejecuta la página Pruebas |
+| `simulaciones/` | Simulaciones (configuración y casos en CSV) que ejecuta la pestaña Simulaciones |
 | `pruebas/probar.py` | Las mismas pruebas desde el terminal, con informe HTML y Excel |
 | `arrancar.cmd` / `arrancar.sh` | Arranque en un ordenador propio (Windows / Mac o Linux) |
 | `pom.xml`, `mvnw`, `.devcontainer/` | Configuración del entorno; no hace falta tocarlos |

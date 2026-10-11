@@ -1,0 +1,14 @@
+{
+  "titulo": "BANCOSUR · subir el umbral de endeudamiento del 35 % al 40 %",
+  "descripcion": "Se evalúan las mismas 1 000 solicitudes con la política actual y con la nueva, y se comparan los resultados. Las solicitudes son sintéticas: no son datos reales.",
+  "actual": {"modelo": "T4_BANCOSUR_Tarjeta", "etiqueta": "Política 1.0"},
+  "nueva": {"modelo": "T4_BANCOSUR_Tarjeta_v1_1", "etiqueta": "Política 1.1"},
+  "casos": "BANCOSUR_solicitudes.csv",
+  "id": "id",
+  "comparar": [
+    {"campo": "Nivel de riesgo", "tipo": "categoria", "orden": ["Bajo", "Medio", "Alto"]},
+    {"campo": "Resultado de la solicitud", "tipo": "categoria", "orden": ["Aprobar", "Revisar", "Denegar"]},
+    {"campo": "Límite concedido", "tipo": "numero", "unidad": "€"}
+  ],
+  "mostrar": ["Puntuación del modelo", "Ratio de endeudamiento", "Ingresos anuales"]
+}
