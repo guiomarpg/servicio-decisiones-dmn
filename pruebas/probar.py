@@ -154,7 +154,7 @@ def informe_html(resultados, base, fecha):
         for e in b['escenarios']:
             chk = ''.join('<li class="%s">%s %s: %s → %s</li>' % ('good' if c['ok'] else 'bad', '✔' if c['ok'] else '✘', html.escape(c['campo']),
                                                                   html.escape(fmt(c['esperado'])), html.escape(fmt(c['obtenido']))) for c in e['comprobaciones'])
-            if e['mensajes']:
+            if e['mensajes'] and e['estado'] != 'OK':
                 chk += ''.join('<li class="bad">%s</li>' % html.escape(m[:200]) for m in e['mensajes'][:3])
             est = e['estado']
             h.append('<tr><td>%s</td><td>%s</td><td>%s</td><td><span class="st %s">%s</span><br><small>HTTP %s</small></td><td><ul class="chk">%s</ul></td>'

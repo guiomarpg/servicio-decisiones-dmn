@@ -116,7 +116,7 @@ function pintar() {
       const r = res && res[k];
       const st = r ? r.estado : 'PENDIENTE';
       const chk = r ? r.chk.map(c => `<li class="${c.ok ? 'good' : 'bad'}">${c.ok ? '✔' : '✘'} ${esc(c.campo)}: ${esc(fmt(c.esperado))} → ${esc(fmt(c.obtenido))}</li>`).join('') +
-                      r.mensajes.slice(0, 3).map(m => `<li class="bad">${esc(m.slice(0, 200))}</li>`).join('')
+                      (r.estado === 'OK' ? '' : r.mensajes.slice(0, 3).map(m => `<li class="bad">${esc(m.slice(0, 200))}</li>`).join(''))
                     : Object.entries(e.esperado || {}).map(([k, v]) => `<li>${esc(k)}: ${esc(fmt(v))}</li>`).join('');
       const det = r ? `<details><summary>petición y respuesta</summary><pre>${esc(JSON.stringify(r.entrada, null, 1))}</pre><pre>${esc(typeof r.resp === 'string' ? r.resp : JSON.stringify(r.resp, null, 1))}</pre></details>`
                     : `<details><summary>petición</summary><pre>${esc(JSON.stringify(e.entrada, null, 1))}</pre></details>`;
