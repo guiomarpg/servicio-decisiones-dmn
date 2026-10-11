@@ -1,0 +1,5 @@
+target/
+/modelos
+.idea/
+.vscode/
+*.log

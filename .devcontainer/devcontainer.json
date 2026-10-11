@@ -1,0 +1,18 @@
+{
+  "name": "Servicio de decisiones DMN",
+  "image": "mcr.microsoft.com/devcontainers/java:1-21-bookworm",
+  "hostRequirements": { "cpus": 2, "memory": "4gb" },
+  "postCreateCommand": "ln -sfn src/main/resources/modelos modelos && ./mvnw -B -q package -DskipTests",
+  "postAttachCommand": "./mvnw -B quarkus:dev -Dquarkus.console.enabled=false",
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": { "label": "Servicio de decisiones (Swagger UI)", "onAutoForward": "openBrowser" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["kie-group.dmn-vscode-extension"],
+      "settings": { "workbench.startupEditor": "readme" }
+    },
+    "codespaces": { "openFiles": ["README.md"] }
+  }
+}
