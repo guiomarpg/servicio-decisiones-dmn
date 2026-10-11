@@ -1,0 +1,356 @@
+{
+  "titulo": "FRIOCAMPO · Planificar entrega",
+  "modelo": "T4_FRIOCAMPO_Entrega",
+  "servicio": "Planificar entrega",
+  "descripcion": "Pedidos del lunes 16 de noviembre de 2026. Resultados esperados acordados con el responsable de logística.",
+  "escenarios": [
+    {
+      "id": "F01",
+      "tipo": "Aceptación",
+      "descripcion": "Granada, entrega el viernes 20, tres tipos de producto",
+      "entrada": {
+        "Pedido": {
+          "fecha pedido": "2026-11-16",
+          "fecha entrega solicitada": "2026-11-20",
+          "provincia destino": "Granada",
+          "líneas": [
+            {
+              "producto": "Yogures",
+              "tipo": "Refrigerado",
+              "palés": 6
+            },
+            {
+              "producto": "Helados",
+              "tipo": "Congelado",
+              "palés": 4
+            },
+            {
+              "producto": "Conservas",
+              "tipo": "Seco",
+              "palés": 3
+            }
+          ]
+        }
+      },
+      "esperado": {
+        "zona": "Zona 2",
+        "viable": true,
+        "prioridad": "Rápido",
+        "coste": 469,
+        "motivo": "Entrega aceptada"
+      }
+    },
+    {
+      "id": "F02",
+      "tipo": "Una por regla",
+      "descripcion": "Sevilla (zona 1), 26 palés: supera un camión",
+      "entrada": {
+        "Pedido": {
+          "fecha pedido": "2026-11-16",
+          "fecha entrega solicitada": "2026-11-19",
+          "provincia destino": "Sevilla",
+          "líneas": [
+            {
+              "producto": "Conservas",
+              "tipo": "Seco",
+              "palés": 20
+            },
+            {
+              "producto": "Yogures",
+              "tipo": "Refrigerado",
+              "palés": 6
+            }
+          ]
+        }
+      },
+      "esperado": {
+        "zona": "Zona 1",
+        "viable": false,
+        "coste": 516,
+        "motivo": "Supera la capacidad de un camión (24 palés)"
+      }
+    },
+    {
+      "id": "F03",
+      "tipo": "Una por regla",
+      "descripcion": "Badajoz (zona 3) con congelado, entrega en dos días",
+      "entrada": {
+        "Pedido": {
+          "fecha pedido": "2026-11-16",
+          "fecha entrega solicitada": "2026-11-18",
+          "provincia destino": "Badajoz",
+          "líneas": [
+            {
+              "producto": "Pescado congelado",
+              "tipo": "Congelado",
+              "palés": 8
+            }
+          ]
+        }
+      },
+      "esperado": {
+        "zona": "Zona 3",
+        "viable": false,
+        "coste": 480,
+        "motivo": "Antelación insuficiente para la zona"
+      }
+    },
+    {
+      "id": "F04",
+      "tipo": "Una por regla",
+      "descripcion": "Badajoz (zona 3) sin congelado, entrega en dos días",
+      "entrada": {
+        "Pedido": {
+          "fecha pedido": "2026-11-16",
+          "fecha entrega solicitada": "2026-11-18",
+          "provincia destino": "Badajoz",
+          "líneas": [
+            {
+              "producto": "Conservas",
+              "tipo": "Seco",
+              "palés": 5
+            }
+          ]
+        }
+      },
+      "esperado": {
+        "zona": "Zona 3",
+        "viable": true,
+        "prioridad": "Económico",
+        "coste": 160
+      }
+    },
+    {
+      "id": "F05",
+      "tipo": "Frontera",
+      "descripcion": "Exactamente 24 palés: cabe en un camión",
+      "entrada": {
+        "Pedido": {
+          "fecha pedido": "2026-11-16",
+          "fecha entrega solicitada": "2026-11-18",
+          "provincia destino": "Sevilla",
+          "líneas": [
+            {
+              "producto": "Conservas",
+              "tipo": "Seco",
+              "palés": 24
+            }
+          ]
+        }
+      },
+      "esperado": {
+        "viable": true,
+        "coste": 432
+      }
+    },
+    {
+      "id": "F06",
+      "tipo": "Frontera",
+      "descripcion": "25 palés: un palé de más",
+      "entrada": {
+        "Pedido": {
+          "fecha pedido": "2026-11-16",
+          "fecha entrega solicitada": "2026-11-18",
+          "provincia destino": "Sevilla",
+          "líneas": [
+            {
+              "producto": "Conservas",
+              "tipo": "Seco",
+              "palés": 25
+            }
+          ]
+        }
+      },
+      "esperado": {
+        "viable": false,
+        "motivo": "Supera la capacidad de un camión (24 palés)"
+      }
+    },
+    {
+      "id": "F07",
+      "tipo": "Frontera",
+      "descripcion": "Granada con la antelación justa (2 días)",
+      "entrada": {
+        "Pedido": {
+          "fecha pedido": "2026-11-16",
+          "fecha entrega solicitada": "2026-11-18",
+          "provincia destino": "Granada",
+          "líneas": [
+            {
+              "producto": "Conservas",
+              "tipo": "Seco",
+              "palés": 5
+            }
+          ]
+        }
+      },
+      "esperado": {
+        "días de antelación": 2,
+        "viable": true,
+        "coste": 125
+      }
+    },
+    {
+      "id": "F08",
+      "tipo": "Frontera",
+      "descripcion": "Granada con un día menos de la antelación mínima",
+      "entrada": {
+        "Pedido": {
+          "fecha pedido": "2026-11-16",
+          "fecha entrega solicitada": "2026-11-17",
+          "provincia destino": "Granada",
+          "líneas": [
+            {
+              "producto": "Conservas",
+              "tipo": "Seco",
+              "palés": 5
+            }
+          ]
+        }
+      },
+      "esperado": {
+        "días de antelación": 1,
+        "viable": false,
+        "motivo": "Antelación insuficiente para la zona"
+      }
+    },
+    {
+      "id": "F09",
+      "tipo": "Datos ausentes",
+      "descripcion": "Pedido sin provincia de destino",
+      "entrada": {
+        "Pedido": {
+          "fecha pedido": "2026-11-16",
+          "fecha entrega solicitada": "2026-11-18",
+          "líneas": [
+            {
+              "producto": "Conservas",
+              "tipo": "Seco",
+              "palés": 5
+            }
+          ]
+        }
+      },
+      "esperado": {
+        "viable": false,
+        "zona": null,
+        "motivo": "Datos incompletos o no válidos"
+      }
+    },
+    {
+      "id": "F10",
+      "tipo": "Datos imposibles",
+      "descripcion": "Fecha de entrega anterior a la del pedido",
+      "entrada": {
+        "Pedido": {
+          "fecha pedido": "2026-11-16",
+          "fecha entrega solicitada": "2026-11-14",
+          "provincia destino": "Granada",
+          "líneas": [
+            {
+              "producto": "Conservas",
+              "tipo": "Seco",
+              "palés": 5
+            }
+          ]
+        }
+      },
+      "esperado": {
+        "días de antelación": -2,
+        "viable": false
+      }
+    },
+    {
+      "id": "F11",
+      "tipo": "Contrato",
+      "descripcion": "Tipo de producto mal escrito (\"congelado\")",
+      "entrada": {
+        "Pedido": {
+          "fecha pedido": "2026-11-16",
+          "fecha entrega solicitada": "2026-11-20",
+          "provincia destino": "Granada",
+          "líneas": [
+            {
+              "producto": "Yogures",
+              "tipo": "Refrigerado",
+              "palés": 6
+            },
+            {
+              "producto": "Helados",
+              "tipo": "congelado",
+              "palés": 4
+            }
+          ]
+        }
+      },
+      "esperado": {
+        "viable": false,
+        "coste": null,
+        "motivo": "Datos incompletos o no válidos"
+      }
+    },
+    {
+      "id": "F12",
+      "tipo": "Contrato",
+      "descripcion": "Una línea con 0 palés",
+      "entrada": {
+        "Pedido": {
+          "fecha pedido": "2026-11-16",
+          "fecha entrega solicitada": "2026-11-20",
+          "provincia destino": "Granada",
+          "líneas": [
+            {
+              "producto": "Yogures",
+              "tipo": "Refrigerado",
+              "palés": 0
+            }
+          ]
+        }
+      },
+      "esperado": {
+        "viable": false,
+        "motivo": "Datos incompletos o no válidos"
+      }
+    },
+    {
+      "id": "F13",
+      "tipo": "Contrato",
+      "descripcion": "Pedido sin líneas",
+      "entrada": {
+        "Pedido": {
+          "fecha pedido": "2026-11-16",
+          "fecha entrega solicitada": "2026-11-20",
+          "provincia destino": "Granada",
+          "líneas": []
+        }
+      },
+      "esperado": {
+        "viable": false,
+        "motivo": "Datos incompletos o no válidos"
+      }
+    },
+    {
+      "id": "F14",
+      "tipo": "Contrato",
+      "descripcion": "Palés escritos como texto (\"seis\")",
+      "entrada": {
+        "Pedido": {
+          "fecha pedido": "2026-11-16",
+          "fecha entrega solicitada": "2026-11-20",
+          "provincia destino": "Granada",
+          "líneas": [
+            {
+              "producto": "Yogures",
+              "tipo": "Refrigerado",
+              "palés": "seis"
+            }
+          ]
+        }
+      },
+      "esperado": {
+        "viable": false,
+        "motivo": "Datos incompletos o no válidos"
+      }
+    }
+  ]
+}

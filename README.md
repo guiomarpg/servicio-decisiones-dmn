@@ -11,7 +11,7 @@ Entorno para publicar vuestros modelos DMN como **servicios de decisión** y lla
 - Un navegador (Chrome, Edge o Firefox).
 - Una cuenta gratuita de GitHub: <https://github.com/signup>.
 
-GitHub da a cada cuenta gratuita una cuota mensual de horas de Codespaces; con parar el entorno al terminar (paso 6) os sobra para toda la asignatura.
+GitHub da a cada cuenta gratuita una cuota mensual de horas de Codespaces; con parar el entorno al terminar (paso 7) os sobra para toda la asignatura.
 
 ---
 
@@ -33,34 +33,39 @@ Cuando el servicio está listo, el terminal muestra una línea como esta:
 Listening on: http://0.0.0.0:8080
 ```
 
-### 3. Abrid Swagger UI
+### 3. Abrid el servicio
 
-Al arrancar aparece un aviso abajo a la derecha: **«Your application running on port 8080 is available»**. Pulsad **Open in Browser**. Se abre una pestaña nueva con **Swagger UI**, la página que documenta y permite probar vuestros servicios.
+Al arrancar aparece un aviso abajo a la derecha: **«Your application running on port 8080 is available»**. Pulsad **Open in Browser**. Se abre una pestaña nueva con dos accesos:
+
+- **Swagger UI**, la página que documenta y permite probar vuestros servicios uno a uno (pasos 4 y 5).
+- **Pruebas**, que ejecuta de golpe vuestras baterías de escenarios (paso 6).
 
 Si el aviso no aparece o lo cerrasteis: pestaña **PORTS** (Puertos) del panel inferior → puerto **8080** → icono del globo (*Open in Browser*).
 
-![Swagger UI con el modelo de ejemplo](docs/img/01_swagger_inicio.png)
+![Página de inicio del servicio](docs/img/00_inicio.png)
 
-Por cada modelo veréis tres operaciones:
+En Swagger UI, por cada modelo veréis estas operaciones:
 
 | Operación | Para qué sirve |
 |---|---|
 | `POST /<modelo>` | Evalúa el modelo y devuelve las entradas y todas las decisiones |
 | `POST /<modelo>/dmnresult` | Igual, en detalle: estado de cada decisión y mensajes del motor |
 | `GET /<modelo>` | Devuelve el propio fichero DMN |
+| `POST /<modelo>/<servicio>` | Solo si el modelo tiene **servicios de decisión**: evalúa ese servicio y devuelve únicamente sus decisiones de salida |
+| `POST /<modelo>/<servicio>/dmnresult` | Igual, en detalle |
 
-Si el modelo tiene **servicios de decisión**, aparece además una operación por servicio: `POST /<modelo>/<servicio>`.
+![Swagger UI con el modelo de ejemplo](docs/img/01_swagger_inicio.png)
 
 ### 4. Llamad al servicio
 
-1. Desplegad la operación `POST /T3_FRIOCAMPO_Entrega`.
+1. Desplegad la operación `POST /T4_FRIOCAMPO_Entrega/Planificar entrega`.
 2. Pulsad **Try it out**.
 3. En *Request body* pegad el contenido de un fichero de la carpeta `peticiones` (por ejemplo, `friocampo_granada.json`).
 4. Pulsad **Execute**.
 
 ![Petición en Swagger UI](docs/img/02_try_it_out.png)
 
-Debajo aparece la respuesta: el **código** (200 si todo ha ido bien) y el **cuerpo** JSON con el resultado de cada decisión. Swagger también muestra la orden `curl` equivalente, por si queréis repetir la llamada desde un terminal.
+Debajo aparece la respuesta: el **código** (200 si todo ha ido bien) y el **cuerpo** JSON con el resultado: como es un servicio de decisión, solo la decisión de salida, la planificación. Probad la misma petición con `POST /T4_FRIOCAMPO_Entrega` y comparad: el modelo completo devuelve también todas las decisiones intermedias. Swagger muestra además la orden `curl` equivalente, por si queréis repetir la llamada desde un terminal.
 
 ![Respuesta del servicio](docs/img/03_respuesta.png)
 
@@ -76,7 +81,44 @@ Si cambiáis el modelo, basta con sustituir el fichero y volver a llamar al serv
 
 > La ruta de cada servicio es el **nombre del modelo** (el que aparece en las propiedades del DMN en Aletyx), no el nombre del fichero.
 
-### 6. Parad el entorno al terminar
+### 6. Probad con una batería de escenarios
+
+Una **batería** es un fichero `.json` de la carpeta `escenarios` con una lista de escenarios: los datos de entrada y el **resultado esperado**, acordado con negocio. La página **Pruebas** llama al servicio con cada escenario y compara lo que devuelve con lo esperado: verde si coincide, rojo si no.
+
+1. Abrid la página de inicio del servicio y pulsad **Pruebas** (o añadid `/pruebas.html` a la dirección).
+2. Pulsad **Ejecutar todas**.
+3. Si queréis guardar el resultado, pulsad **Descargar Excel**.
+
+![Resultado de una batería](docs/img/05_pruebas_resultado.png)
+
+Para crear vuestra batería, copiad `escenarios/FRIOCAMPO_planificar_entrega.json`, cambiadle el nombre y editadlo:
+
+```json
+{
+  "titulo": "Mi empresa · Mi servicio",
+  "modelo": "Nombre_del_modelo",
+  "servicio": "Nombre del servicio de decisión",
+  "descripcion": "De dónde salen los resultados esperados",
+  "escenarios": [
+    {
+      "id": "E01",
+      "tipo": "Frontera",
+      "descripcion": "Qué comprueba este escenario",
+      "entrada": { "Dato de entrada": 25 },
+      "esperado": { "campo de la respuesta": "valor esperado" }
+    }
+  ]
+}
+```
+
+- Si el modelo no tiene servicios de decisión, quitad la línea `"servicio"`: se llamará al modelo completo.
+- En `esperado` solo hace falta poner los campos que queréis comprobar. Para entrar en un campo de un resultado estructurado se usa el punto: `"Planificación de la entrega.coste"`. Si el servicio devuelve un valor simple (un número, un texto), la clave es `"resultado"`.
+- Si esperáis que el servicio responda con un error, añadid `"http": 500` (o el código que corresponda).
+- Pulsad **Recargar baterías** después de guardar el fichero; no hace falta reiniciar el servicio.
+
+Las mismas baterías se pueden lanzar desde el terminal con `python3 pruebas/probar.py`, que genera un informe en la carpeta `informe`.
+
+### 7. Parad el entorno al terminar
 
 Id a <https://github.com/codespaces>, pulsad los tres puntos junto a vuestro codespace y elegid **Stop codespace**. Si se os olvida, se para solo tras 30 minutos sin uso. Vuestros ficheros se conservan; para volver, abrid el codespace desde esa misma página.
 
@@ -102,5 +144,7 @@ Para guardar los modelos en vuestro repositorio de GitHub: icono de **Source Con
 |---|---|
 | `modelos/` | Los modelos DMN que se publican (atajo a `src/main/resources/modelos`) |
 | `peticiones/` | Peticiones JSON de ejemplo para el modelo de FRIOCAMPO |
+| `escenarios/` | Baterías de escenarios que ejecuta la página Pruebas |
+| `pruebas/probar.py` | Las mismas pruebas desde el terminal, con informe HTML y Excel |
 | `arrancar.cmd` / `arrancar.sh` | Arranque en un ordenador propio (Windows / Mac o Linux) |
 | `pom.xml`, `mvnw`, `.devcontainer/` | Configuración del entorno; no hace falta tocarlos |

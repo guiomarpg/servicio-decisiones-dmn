@@ -19,9 +19,9 @@ En la página del repositorio: **Code → Download ZIP**. Descomprimid el ZIP en
 1. Haced doble clic en **`arrancar.cmd`**.
 2. Se abre una ventana negra. La **primera vez** tarda unos minutos, porque descarga unos 150 MB; las siguientes, segundos.
 3. Si Windows pregunta por el cortafuegos, pulsad **Permitir acceso**.
-4. Cuando aparezca `Listening on: http://0.0.0.0:8080`, abrid en el navegador **<http://localhost:8080>**: se abre Swagger UI.
+4. Cuando aparezca `Listening on: http://0.0.0.0:8080`, abrid en el navegador **<http://localhost:8080>**: se abre la página de inicio del servicio, con los accesos a Swagger UI y a Pruebas.
 
-A partir de aquí, el uso es el mismo que en Codespaces (pasos 4 y 5 del [README](README.md)).
+A partir de aquí, el uso es el mismo que en Codespaces (pasos 4 a 6 del [README](README.md)).
 
 ## Dónde van los modelos
 

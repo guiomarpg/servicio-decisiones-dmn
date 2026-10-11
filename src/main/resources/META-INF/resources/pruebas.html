@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pruebas de decisiones</title>
+<style>
+:root{--azul:#0098CD;--azul-o:#0A5F94;--ok:#1E7B34;--ok-f:#E6F4EA;--ko:#B3261E;--ko-f:#FCE8E6;--av:#8A6100;--av-f:#FEF7E0;--gris:#5F6368;--borde:#DADCE0;--fondo:#F8F9FA}
+*{box-sizing:border-box}body{font-family:Calibri,'Segoe UI',Arial,sans-serif;margin:0;background:var(--fondo);color:#202124}
+header{background:var(--azul-o);color:#fff;padding:16px 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header h1{margin:0;font-size:22px}header p{margin:4px 0 0;opacity:.85;font-size:14px}header a{color:#fff}
+button{font:inherit;border:0;border-radius:6px;padding:8px 14px;cursor:pointer;background:#fff;color:var(--azul-o);font-weight:600}
+button.sec{background:transparent;color:#fff;border:1px solid #fff}button:disabled{opacity:.5;cursor:default}
+main{padding:20px 24px;max-width:1300px;margin:auto}
+.kpis{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px}.kpi{background:#fff;border:1px solid var(--borde);border-radius:8px;padding:10px 16px;min-width:130px}
+.kpi b{display:block;font-size:26px}.kpi.ok b{color:var(--ok)}.kpi.ko b{color:var(--ko)}
+section{background:#fff;border:1px solid var(--borde);border-radius:8px;margin-bottom:18px;overflow:hidden}
+section .cab{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 16px;background:#EAF6FB;border-bottom:1px solid var(--borde)}
+section h2{margin:0;font-size:17px}section .cab button{background:var(--azul);color:#fff;padding:6px 12px}
+section .meta{padding:6px 16px;color:var(--gris);font-size:13px;border-bottom:1px solid var(--borde)}
+.tabla{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13.5px}th{background:var(--azul);color:#fff;text-align:left;padding:7px 8px;font-weight:600}
+td{padding:7px 8px;border-bottom:1px solid var(--borde);vertical-align:top}
+.st{font-weight:700;border-radius:4px;padding:2px 8px;display:inline-block;white-space:nowrap}
+.OK{background:var(--ok-f);color:var(--ok)}.FALLO,.ERROR{background:var(--ko-f);color:var(--ko)}.SIN,.PENDIENTE{background:var(--av-f);color:var(--av)}
+ul.chk{margin:0;padding:0;list-style:none}.chk .bad{color:var(--ko);font-weight:600}.chk .good{color:var(--ok)}
+details summary{cursor:pointer;color:var(--azul-o)}pre{background:#F1F3F4;padding:8px;border-radius:4px;max-height:260px;overflow:auto;font-size:12px;white-space:pre-wrap}
+code{font-family:Consolas,monospace}.aviso{background:#fff;border:1px solid var(--borde);border-left:4px solid var(--azul);border-radius:6px;padding:12px 16px;margin-bottom:18px}
+.error{border-left-color:var(--ko)}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Pruebas de los servicios de decisión</h1>
+  <p>Baterías de la carpeta <code>escenarios</code> · <a href="/q/swagger-ui/">Swagger UI</a></p></div>
+  <div><button id="todas">Ejecutar todas</button> <button id="excel" class="sec" disabled>Descargar Excel</button> <button id="recargar" class="sec">Recargar baterías</button></div>
+</header>
+<main>
+  <div class="kpis" id="kpis"></div>
+  <div id="baterias"><div class="aviso">Cargando baterías…</div></div>
+</main>
+<script>
+const TOL = 0.005;
+let BATERIAS = [], RESULTADOS = {};
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = v => typeof v === 'string' ? v : (v === undefined ? '(no aparece)' : JSON.stringify(v));
+
+function obtener(resp, ruta) {
+  if (ruta === 'resultado' || ruta === '$') return [resp, true];
+  let a = resp;
+  for (const p of ruta.split('.')) {
+    if (a !== null && typeof a === 'object' && !Array.isArray(a) && p in a) a = a[p]; else return [undefined, false];
+  }
+  return [a, true];
+}
+function iguales(e, o) {
+  if (typeof e === 'boolean' || typeof o === 'boolean') return e === o;
+  if (typeof e === 'number' && typeof o === 'number') return Math.abs(e - o) <= TOL;
+  if (Array.isArray(e) && Array.isArray(o)) return e.length === o.length && e.every((x, i) => iguales(x, o[i]));
+  if (e && o && typeof e === 'object' && typeof o === 'object') return Object.keys(e).every(k => k in o && iguales(e[k], o[k]));
+  return e === o;
+}
+function url(b) {
+  return '/' + [b.modelo].concat(b.servicio ? [b.servicio] : []).map(encodeURIComponent).join('/');
+}
+
+async function ejecutar(i) {
+  const b = BATERIAS[i], filas = [];
+  for (const e of (b.escenarios || [])) {
+    const httpEsp = e.http || 200;
+    let codigo = 0, resp = null, mensajes = [];
+    try {
+      const r = await fetch(url(b), {method: 'POST', headers: {'Content-Type': 'application/json', 'Accept': 'application/json'}, body: JSON.stringify(e.entrada || {})});
+      codigo = r.status; const t = await r.text();
+      try { resp = JSON.parse(t); } catch (_) { resp = t; }
+      if (codigo !== 200 && resp && resp.messages) mensajes = resp.messages.filter(m => m.severity === 'ERROR').map(m => m.message);
+      else if (codigo !== 200) mensajes = [String(t).slice(0, 300)];
+    } catch (err) { mensajes = ['No se puede llamar al servicio: ' + err]; }
+    const chk = [];
+    if (codigo !== httpEsp) chk.push({campo: 'código HTTP', esperado: httpEsp, obtenido: codigo, ok: false});
+    if (codigo === 200) for (const [campo, esp] of Object.entries(e.esperado || {})) {
+      const [obt, existe] = obtener(resp, campo);
+      chk.push({campo, esperado: esp, obtenido: existe ? obt : undefined, ok: existe && iguales(esp, obt)});
+    }
+    let estado = codigo === 0 ? 'ERROR' : (chk.every(c => c.ok) ? 'OK' : 'FALLO');
+    if (!e.esperado && codigo === httpEsp) estado = 'SIN ESPERADO';
+    filas.push({id: e.id || '', tipo: e.tipo || '', descripcion: e.descripcion || '', estado, http: codigo, chk, entrada: e.entrada, resp, mensajes});
+  }
+  RESULTADOS[i] = filas;
+  pintar();
+}
+
+function pintar() {
+  const todos = Object.values(RESULTADOS).flat();
+  const total = BATERIAS.reduce((n, b) => n + (b.escenarios || []).length, 0);
+  const ok = todos.filter(r => r.estado === 'OK').length, ko = todos.filter(r => r.estado === 'FALLO' || r.estado === 'ERROR').length;
+  document.getElementById('kpis').innerHTML =
+    `<div class="kpi"><b>${total}</b>escenarios</div><div class="kpi ok"><b>${ok}</b>coinciden</div>` +
+    `<div class="kpi ko"><b>${ko}</b>no coinciden</div><div class="kpi"><b>${total - todos.length}</b>sin ejecutar</div>`;
+  document.getElementById('excel').disabled = todos.length === 0;
+  const cont = document.getElementById('baterias');
+  if (!BATERIAS.length) {
+    cont.innerHTML = '<div class="aviso">No hay baterías. Añadid ficheros <code>.json</code> a la carpeta <code>escenarios</code> y pulsad «Recargar baterías».</div>';
+    return;
+  }
+  cont.innerHTML = BATERIAS.map((b, i) => {
+    if (b.error) return `<div class="aviso error"><b>${esc(b.fichero)}</b>: ${esc(b.error)}</div>`;
+    const res = RESULTADOS[i];
+    const nOk = res ? res.filter(r => r.estado === 'OK').length : 0;
+    const filas = (b.escenarios || []).map((e, k) => {
+      const r = res && res[k];
+      const st = r ? r.estado : 'PENDIENTE';
+      const chk = r ? r.chk.map(c => `<li class="${c.ok ? 'good' : 'bad'}">${c.ok ? '✔' : '✘'} ${esc(c.campo)}: ${esc(fmt(c.esperado))} → ${esc(fmt(c.obtenido))}</li>`).join('') +
+                      r.mensajes.slice(0, 3).map(m => `<li class="bad">${esc(m.slice(0, 200))}</li>`).join('')
+                    : Object.entries(e.esperado || {}).map(([k, v]) => `<li>${esc(k)}: ${esc(fmt(v))}</li>`).join('');
+      const det = r ? `<details><summary>petición y respuesta</summary><pre>${esc(JSON.stringify(r.entrada, null, 1))}</pre><pre>${esc(typeof r.resp === 'string' ? r.resp : JSON.stringify(r.resp, null, 1))}</pre></details>`
+                    : `<details><summary>petición</summary><pre>${esc(JSON.stringify(e.entrada, null, 1))}</pre></details>`;
+      return `<tr><td>${esc(e.id || '')}</td><td>${esc(e.tipo || '')}</td><td>${esc(e.descripcion || '')}</td>` +
+             `<td><span class="st ${st.split(' ')[0]}">${st}</span>${r ? `<br><small>HTTP ${r.http}</small>` : ''}</td><td><ul class="chk">${chk}</ul></td><td>${det}</td></tr>`;
+    }).join('');
+    return `<section><div class="cab"><h2>${esc(b.titulo || b.fichero)}${res ? ` · ${nOk}/${res.length}` : ''}</h2><button onclick="ejecutar(${i})">Ejecutar</button></div>` +
+           `<div class="meta">${esc(b.descripcion || '')}<br><code>POST ${esc(decodeURIComponent(url(b)))}</code> · fichero <code>${esc(b.fichero)}</code></div>` +
+           `<div class="tabla"><table><tr><th>ID</th><th>Tipo</th><th>Escenario</th><th>Resultado</th><th>${res ? 'Comprobaciones (esperado → obtenido)' : 'Esperado'}</th><th>Detalle</th></tr>${filas}</table></div></section>`;
+  }).join('');
+}
+
+async function cargar() {
+  RESULTADOS = {};
+  try { BATERIAS = await (await fetch('/pruebas/baterias')).json(); }
+  catch (e) { BATERIAS = []; document.getElementById('baterias').innerHTML = '<div class="aviso error">No se pueden leer las baterías: ' + esc(e) + '</div>'; return; }
+  pintar();
+}
+
+function cargarScript(src) {
+  return new Promise((ok, ko) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = ko; document.head.appendChild(s); });
+}
+async function excel() {
+  const filas = [['Batería', 'ID', 'Tipo', 'Escenario', 'Resultado', 'HTTP', 'Campo', 'Esperado', 'Obtenido', '¿Coincide?']];
+  BATERIAS.forEach((b, i) => (RESULTADOS[i] || []).forEach(r => {
+    const cs = r.chk.length ? r.chk : [{campo: '', esperado: '', obtenido: '', ok: r.estado === 'OK'}];
+    cs.forEach(c => filas.push([b.titulo || b.fichero, r.id, r.tipo, r.descripcion, r.estado, r.http, c.campo, fmt(c.esperado), fmt(c.obtenido), c.ok ? 'Sí' : 'No']));
+  }));
+  try {
+    if (!window.XLSX) await cargarScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+    const ws = XLSX.utils.aoa_to_sheet(filas), wb = XLSX.utils.book_new();
+    ws['!cols'] = [34, 6, 16, 52, 11, 7, 26, 34, 34, 11].map(w => ({wch: w}));
+    XLSX.utils.book_append_sheet(wb, ws, 'Resultados');
+    XLSX.writeFile(wb, 'resultados_pruebas.xlsx');
+  } catch (e) {   // sin conexión: CSV que abre Excel
+    const csv = '﻿' + filas.map(f => f.map(x => '"' + String(x).replace(/"/g, '""') + '"').join(';')).join('\r\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'})); a.download = 'resultados_pruebas.csv'; a.click();
+  }
+}
+
+document.getElementById('todas').onclick = async () => { for (let i = 0; i < BATERIAS.length; i++) if (!BATERIAS[i].error) await ejecutar(i); };
+document.getElementById('excel').onclick = excel;
+document.getElementById('recargar').onclick = cargar;
+cargar();
+</script>
+</body>
+</html>
