@@ -2,11 +2,11 @@
   "titulo": "BANCOSUR · subir el umbral de endeudamiento del riesgo bajo del 35 % al 40 %",
   "descripcion": "Se evalúan las mismas 1 000 solicitudes con la política 1.0.0 y con la 1.0.1, y se comparan los resultados. Las solicitudes son sintéticas: no son datos reales.",
   "actual": {
-    "modelo": "T4_BANCOSUR_Tarjeta",
+    "modelo": "BANCOSUR_Tarjeta",
     "etiqueta": "Política 1.0.0"
   },
   "nueva": {
-    "modelo": "T4_BANCOSUR_Tarjeta_v1_0_1",
+    "modelo": "BANCOSUR_Tarjeta_v1_0_1",
     "etiqueta": "Política 1.0.1"
   },
   "casos": "BANCOSUR_solicitudes.csv",

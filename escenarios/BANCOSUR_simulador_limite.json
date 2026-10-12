@@ -1,6 +1,6 @@
 {
   "titulo": "BANCOSUR · Simulador de límite",
-  "modelo": "T4_BANCOSUR_Tarjeta",
+  "modelo": "BANCOSUR_Tarjeta",
   "servicio": "Simulador de límite",
   "descripcion": "Límite orientativo para la web pública. Solo recibe el perfil financiero.",
   "escenarios": [

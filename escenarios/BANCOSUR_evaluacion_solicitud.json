@@ -1,6 +1,6 @@
 {
   "titulo": "BANCOSUR · Evaluación de la solicitud",
-  "modelo": "T4_BANCOSUR_Tarjeta",
+  "modelo": "BANCOSUR_Tarjeta",
   "servicio": "Evaluación de la solicitud",
   "descripcion": "Política de riesgos 1.0.0. Resultados esperados acordados con el área de riesgos.",
   "escenarios": [

@@ -58,14 +58,14 @@ En Swagger UI, por cada modelo veréis estas operaciones:
 
 ### 4. Llamad al servicio
 
-1. Desplegad la operación `POST /T4_BANCOSUR_Tarjeta/Evaluación de la solicitud`.
+1. Desplegad la operación `POST /BANCOSUR_Tarjeta/Evaluación de la solicitud`.
 2. Pulsad **Try it out**.
 3. En *Request body* pegad el contenido de un fichero de la carpeta `peticiones` (por ejemplo, `bancosur_aprobar.json`).
 4. Pulsad **Execute**.
 
 ![Petición en Swagger UI](docs/img/02_try_it_out.png)
 
-Debajo aparece la respuesta: el **código** (200 si todo ha ido bien) y el **cuerpo** JSON con el resultado: como es un servicio de decisión, solo la decisión de salida, el resultado de la solicitud. Probad la misma petición con `POST /T4_BANCOSUR_Tarjeta` y comparad: el modelo completo devuelve también todas las decisiones intermedias. Probad también las otras peticiones de la carpeta: la que no trae ingresos y la que trae el endeudamiento escrito como texto. Swagger muestra además la orden `curl` equivalente, por si queréis repetir la llamada desde un terminal.
+Debajo aparece la respuesta: el **código** (200 si todo ha ido bien) y el **cuerpo** JSON con el resultado: como es un servicio de decisión, solo la decisión de salida, el resultado de la solicitud. Probad la misma petición con `POST /BANCOSUR_Tarjeta` y comparad: el modelo completo devuelve también todas las decisiones intermedias. Probad también las otras peticiones de la carpeta: la que no trae ingresos y la que trae el endeudamiento escrito como texto. Swagger muestra además la orden `curl` equivalente, por si queréis repetir la llamada desde un terminal.
 
 ![Respuesta del servicio](docs/img/03_respuesta.png)
 
@@ -164,7 +164,9 @@ Para guardar los modelos en vuestro repositorio de GitHub: icono de **Source Con
 
 ## Preguntas frecuentes
 
-**La respuesta da código 500.** El servicio ha recibido la petición, pero no ha podido decidir: o algún dato no cumple el contrato (un valor que no está entre los permitidos, un texto donde va un número), o alguna decisión ha fallado. El entorno trabaja en **modo estricto**: comprueba los tipos de los datos de entrada y rechaza los que no encajan, en lugar de seguir con un null. Repetid la llamada con la operación `/dmnresult`: el campo `messages` dice qué decisión falló y por qué, y `decisionResults` muestra el estado de cada una (`SUCCEEDED`, `FAILED` o `SKIPPED`).
+**La respuesta da código 500.** El servicio ha recibido la petición, pero no ha podido decidir: o algún dato no cumple el contrato, o alguna decisión ha fallado. El entorno trabaja con la **comprobación de tipos activada** (también llamada *modo estricto*): al llamar al modelo completo, rechaza un texto que no está entre los valores permitidos de su tipo (por ejemplo, «congelado» si el valor permitido es «Congelado») o un valor de un tipo que no encaja, como un texto en un campo de sí o no. Repetid la llamada con la operación `/dmnresult`: el campo `messages` dice qué decisión falló y por qué, y `decisionResults` muestra el estado de cada una (`SUCCEEDED`, `FAILED` o `SKIPPED`).
+
+**Envío un texto donde va un número y no da error.** Es así: si un campo numérico recibe un texto que no es un número (por ejemplo, `"28 %"`), el motor lo convierte en `null` **sin ningún aviso** y el modelo sigue decidiendo. Por eso conviene que el propio modelo compruebe que los datos obligatorios han llegado. Los servicios de decisión (`/<modelo>/<servicio>`) son además más permisivos que el modelo completo: si un dato no cumple su tipo, lo ponen a `null`, avisan en los mensajes y responden 200.
 
 **La respuesta da código 400.** El JSON está mal formado (falta una llave, una coma o unas comillas). Revisadlo o pegad de nuevo un ejemplo de `peticiones`.
 
