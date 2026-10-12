@@ -81,6 +81,8 @@ Si cambiáis el modelo, basta con sustituir el fichero y volver a llamar al serv
 
 > La ruta de cada servicio es el **nombre del modelo** (el que aparece en las propiedades del DMN en Aletyx), no el nombre del fichero.
 
+**Modelos predictivos (PMML).** Si vuestro DMN llama a un modelo predictivo desde un BKM de tipo PMML, dejad el fichero `.pmml` en la misma carpeta **`modelos`**, junto al `.dmn`. En el DMN, la importación del modelo debe declarar el tipo `http://www.dmg.org/PMML-4_2` (aunque el fichero sea PMML 4.4). El `.dmn` se recarga solo, pero si cambiáis el `.pmml` tenéis que reiniciar el servicio (en el terminal, `Ctrl+C` y después `./arrancar.sh`; en Windows, `arrancar.cmd`).
+
 ### 6. Probad con una batería de escenarios
 
 Una **batería** es un fichero `.json` de la carpeta `escenarios` con una lista de escenarios: los datos de entrada y el **resultado esperado**, acordado con negocio. La página **Pruebas** llama al servicio con cada escenario y compara lo que devuelve con lo esperado: verde si coincide, rojo si no.

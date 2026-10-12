@@ -46,6 +46,12 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-resteasy-jackson</artifactId>
     </dependency>
+    <!-- Modelos predictivos PMML invocados desde DMN (BKM de tipo PMML) -->
+    <dependency>
+      <groupId>org.kie</groupId>
+      <artifactId>kie-pmml-dependencies</artifactId>
+      <version>${kie.version}</version>
+    </dependency>
     <!-- Documentación OpenAPI y página Swagger UI -->
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -58,6 +64,18 @@
   </dependencies>
 
   <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <!-- Los ficheros .pmml de "modelos" se copian también a la raíz, donde los busca el motor -->
+      <resource>
+        <directory>src/main/resources/modelos</directory>
+        <includes>
+          <include>*.pmml</include>
+        </includes>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>io.quarkus.platform</groupId>
